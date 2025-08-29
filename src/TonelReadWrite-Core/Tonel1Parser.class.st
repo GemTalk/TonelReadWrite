@@ -46,6 +46,7 @@ Tonel1Parser class >> tonelGrammarSource [
 	grammar for testing and a permissive grammar for reading and correcting hand-edited files."
 
 	^ '
+	TonelFile <- ClassDefinitionFile / ClassExtensionFile / PackagePropertiesFile / ClassDefinitionPropertiesFile / ClassExtensionPropertiesFile / TonelMethodFile / PackageFile;
 	TonelFileObject <- "TonelFile" WsBlank Map;
 	PackagePropertiesObject <- "Package" WsBlank Map;
 	ClassPropertiesObject <- "Class" WsBlank Map;
@@ -86,16 +87,16 @@ Tonel1Parser class >> tonelGrammarSource [
 		
 	ClassProperties <- Comment? ClassPropertiesObject;
 	PackageProperties <- Comment? PackagePropertiesObject;
-	PackagePropertiesFile <- TonelFileObject WsNl PackageProperties;
-	ClassDefinitionPropertiesFile <- TonelFileObject WsNl ClassProperties;
-	ClassExtensionPropertiesFile <- TonelFileObject WsNl TonelClassExtensionObject;
-	TonelMethodFile <- TonelFileObject WsNl DescribedSmalltalkMethod;
-	ClassDefinitionFile <- TonelFileObject WsNl ClassDefinition;
+	PackagePropertiesFile <- TonelFileObject WsNl PackageProperties !.;
+	ClassDefinitionPropertiesFile <- TonelFileObject WsNl ClassProperties !.;
+	ClassExtensionPropertiesFile <- TonelFileObject WsNl TonelClassExtensionObject !.;
+	TonelMethodFile <- TonelFileObject WsNl DescribedSmalltalkMethod !.;
+	ClassDefinitionFile <- TonelFileObject WsNl ClassDefinition !.;
 	ClassDefinition <- ClassProperties (WsNl SmalltalkMethods)?;
 	SmalltalkMethods <- (DescribedSmalltalkMethod WsNl SmalltalkMethods) / DescribedSmalltalkMethod;
-	ClassExtensionFile <- TonelFileObject WsNl ClassExtension;
+	ClassExtensionFile <- TonelFileObject WsNl ClassExtension !.;
 	ClassExtension <- TonelClassExtensionObject WsNl SmalltalkMethods;
-	PackageFile <- TonelFileObject WsNl PackageProperties WsNl PackageContents;
+	PackageFile <- TonelFileObject WsNl PackageProperties WsNl PackageContents !.;
 	PackageContents <- (ClassDefinitions WsNl ClassExtensions) / ClassDefinitions / ClassExtensions;
 	ClassDefinitions <- (ClassDefinition WsNl ClassDefinitions) / ClassDefinition;
 	ClassExtensions <- (ClassExtension WsNl ClassExtensions) / ClassExtension;
