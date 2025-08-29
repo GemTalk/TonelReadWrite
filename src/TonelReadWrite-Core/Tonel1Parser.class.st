@@ -12,8 +12,9 @@ Class {
 	#classInstVars : [
 		'tonelGrammar'
 	],
-	#category : 'TonelReadWrite-Core',
-	#package : 'TonelReadWrite-Core'
+	#category : 'TonelReadWrite-Core-Parser',
+	#package : 'TonelReadWrite-Core',
+	#tag : 'Parser'
 }
 
 { #category : 'initialization' }
@@ -21,6 +22,19 @@ Tonel1Parser class >> initializeTonelGrammar [
 	"self initializeTonelGrammar"
 
 	^ tonelGrammar := PikaMetaGrammar parse: self tonelGrammarSource
+]
+
+{ #category : 'parsing' }
+Tonel1Parser class >> parse: sourceString [
+	"sourceString should be the contents of a Tonel file"
+
+	^ self new parse: sourceString
+]
+
+{ #category : 'support' }
+Tonel1Parser class >> tonelGrammar [
+
+	^ tonelGrammar ifNil: [ self initializeTonelGrammar ]
 ]
 
 { #category : 'support' }
@@ -54,9 +68,9 @@ Tonel1Parser class >> tonelGrammarSource [
 	SimpleSymbol <- "#" SimpleSymbolChar+;
 	SimpleSymbolChar <- [A-Z] / [a-z] / [0-9] / "-" / "_" / "." / "/";
 
-	Comment <- "\"" ((!"\"" .) / "\"\"")* "\"" WsNl WsNl;
+	Comment <- "\"" ((!"\"" .) / "\"\"")* "\"" WsNl;
 	
-	DescribedSmalltalkMethod <- TonelMethodDescriptor? SquareBracketsMethod?;
+	DescribedSmalltalkMethod <- TonelMethodDescriptor SquareBracketsMethod / TonelMethodDescriptor / SquareBracketsMethod;
 
 	SquareBracketsMethod <- MethodIdentification WsBlank "[" WsNl SmalltalkCode WsNl "]" WsNl;
 	MethodIdentification <- ClassIdentifier WsBlank ">>" WsBlank MethodPattern;
@@ -68,7 +82,7 @@ Tonel1Parser class >> tonelGrammarSource [
 	SmalltalkComment <- "\"" ( !"\"" . )* "\"";
 	SmalltalkCharacterLiteral <- "$" .;
 	SmalltalkBlock <- "[" SmalltalkCode "]";
-	OtherSmalltalkCode <- (!("\"" / "\''" / "$" / "[") .)+;
+	OtherSmalltalkCode <- (!("\"" / "\''" / "$" / "[" / (WsNl "]")) .)+;
 		
 	ClassProperties <- Comment? ClassPropertiesObject;
 	PackageProperties <- Comment? PackagePropertiesObject;
@@ -94,4 +108,53 @@ Tonel1Parser class >> tonelGrammarSource [
 	Whitespace <- (WsBlank / WsTab / WsNl)+; 
 
 	'
+]
+
+{ #category : 'parsing' }
+Tonel1Parser >> parse: sourceString [
+
+	| astRoot |
+	astRoot := self parseToAst: sourceString.
+
+	"for now..."
+	^ astRoot
+]
+
+{ #category : 'parsing' }
+Tonel1Parser >> parseToAst: sourceString [
+	memoTable := self tonelGrammar parse: sourceString.
+	self reportSyntaxErrors.
+	^ memoTable ast
+]
+
+{ #category : 'private' }
+Tonel1Parser >> reportSyntaxErrors [
+
+	| syntaxErrors text |
+	syntaxErrors := memoTable syntaxErrorsForRuleNames:
+		                self syntaxCoverageRules.
+	syntaxErrors ifEmpty: [ ^ self ].
+
+	"Inspect source with syntax error ranges bolded and in red."
+	text := memoTable input asText.
+	syntaxErrors keysAndValuesDo: [ :start :v |
+		| end |
+		end := v key - 1.
+		text
+			makeBoldFrom: start to: end;
+			makeColor: Color red from: start to: end ].
+	text inspect.
+	self error: 'syntax errors'
+]
+
+{ #category : 'private' }
+Tonel1Parser >> syntaxCoverageRules [
+
+	^ #( ClassDefinitionFile DescribedSmalltalkMethod SquareBracketsMethod Map Comment Whitespace )
+]
+
+{ #category : 'parsing' }
+Tonel1Parser >> tonelGrammar [
+
+	^ self class tonelGrammar
 ]
