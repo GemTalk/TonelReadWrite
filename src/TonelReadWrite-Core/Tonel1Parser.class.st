@@ -46,9 +46,9 @@ Tonel1Parser class >> tonelGrammarSource [
 	grammar for testing and a permissive grammar for reading and correcting hand-edited files."
 
 	^ '
-	TonelFile <- classDefinitionFile:ClassDefinitionFile / classExtensionFile:ClassExtensionFile / packagePropertiesFile:PackagePropertiesFile / 
+	TonelFile <- tonelFile:(classDefinitionFile:ClassDefinitionFile / classExtensionFile:ClassExtensionFile / packagePropertiesFile:PackagePropertiesFile / 
 		classDefinitionPropertiesFile:ClassDefinitionPropertiesFile / classExtensionPropertiesFile:ClassExtensionPropertiesFile / 
-		tonelMethodFile:TonelMethodFile / packageFile:PackageFile;
+		tonelMethodFile:TonelMethodFile / packageFile:PackageFile);
 	TonelFileObject <- "TonelFile" WsBlank fileInfo:Map;
 	PackagePropertiesObject <- "Package" WsBlank packageInfo:Map;
 	ClassPropertiesObject <- "Class" WsBlank classDefinition:Map;
