@@ -5,36 +5,17 @@ Uses the Pika parser (a PEG parser) to do the parsing into an object structure t
 "
 Class {
 	#name : 'Tonel1Parser',
-	#superclass : 'Object',
-	#instVars : [
-		'memoTable'
-	],
-	#classInstVars : [
-		'tonelGrammar'
-	],
+	#superclass : 'PikaParser',
 	#category : 'TonelReadWrite-Core-Parser',
 	#package : 'TonelReadWrite-Core',
 	#tag : 'Parser'
 }
-
-{ #category : 'initialization' }
-Tonel1Parser class >> initializeTonelGrammar [
-	"self initializeTonelGrammar"
-
-	^ tonelGrammar := PikaMetaGrammar parse: self tonelGrammarSource
-]
 
 { #category : 'parsing' }
 Tonel1Parser class >> parse: sourceString [
 	"sourceString should be the contents of a Tonel file"
 
 	^ self new parse: sourceString
-]
-
-{ #category : 'support' }
-Tonel1Parser class >> tonelGrammar [
-
-	^ tonelGrammar ifNil: [ self initializeTonelGrammar ]
 ]
 
 { #category : 'support' }
@@ -121,33 +102,6 @@ Tonel1Parser >> parse: sourceString [
 
 	"for now..."
 	^ astRoot
-]
-
-{ #category : 'parsing' }
-Tonel1Parser >> parseToAst: sourceString [
-	memoTable := self tonelGrammar parse: sourceString.
-	self reportSyntaxErrors.
-	^ memoTable ast
-]
-
-{ #category : 'private' }
-Tonel1Parser >> reportSyntaxErrors [
-
-	| syntaxErrors text |
-	syntaxErrors := memoTable syntaxErrorsForRuleNames:
-		                self syntaxCoverageRules.
-	syntaxErrors ifEmpty: [ ^ self ].
-
-	"Inspect source with syntax error ranges bolded and in red."
-	text := memoTable input asText.
-	syntaxErrors keysAndValuesDo: [ :start :v |
-		| end |
-		end := v key - 1.
-		text
-			makeBoldFrom: start to: end;
-			makeColor: Color red from: start to: end ].
-	text inspect.
-	self error: 'syntax errors'
 ]
 
 { #category : 'private' }
