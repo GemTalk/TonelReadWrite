@@ -11,13 +11,6 @@ Class {
 	#tag : 'Parser'
 }
 
-{ #category : 'parsing' }
-Tonel1Parser class >> parse: sourceString [
-	"sourceString should be the contents of a Tonel file"
-
-	^ self new parse: sourceString
-]
-
 { #category : 'support' }
 Tonel1Parser class >> tonelGrammarSource [
 	"PEG grammar source code, which gets compiled to an actual Tonel grammar and cached in the 
