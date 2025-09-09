@@ -12,7 +12,7 @@ Class {
 }
 
 { #category : 'support' }
-Tonel1Parser class >> tonelGrammarSource [
+Tonel1Parser class >> grammarSource [
 	"PEG grammar source code, which gets compiled to an actual Tonel grammar and cached in the 
 	tonelGrammar class instance variable.
 	This grammar is strict, since it is intended to test the spec and read mostly files that

@@ -19,14 +19,13 @@ Tonel1ParserTest >> _testFileDirectory [
 { #category : 'support' }
 Tonel1ParserTest >> stackClassFile [
 
-	| file |
-	file := self _testFileDirectory / 'Stack.class.st'.
-	^ file contents
+	^ self _testFileDirectory / 'Stack.class.st'
 ]
 
 { #category : 'tests' }
 Tonel1ParserTest >> testParseStack [
+
 	| parseResult |
-	parseResult := Tonel1Parser parse: self stackClassFile.
-	self halt.
+	parseResult := Tonel1Parser new parseFile: self stackClassFile.
+	self halt
 ]
