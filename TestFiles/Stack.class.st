@@ -1,6 +1,5 @@
 TonelFile {
 	#tonelVersion : '1.0',
-	#tonelFormat : 'filePerClass',
 	#contentType : 'classFile',
 	#name : 'Stack.class.st'
 }
@@ -28,7 +27,8 @@ Stack >> push: anObject [
 	^ anObject.
 ]
 
-{
+Method {
+	#class : 'Stack',
 	#category : 'accessing',
 	#selector : 'top',
 	#source : 'top
