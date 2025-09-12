@@ -12,32 +12,6 @@ Class {
 	#tag : 'Model'
 }
 
-{ #category : 'instance creation' }
-TnFileInfo class >> fromMap: map [
-	"Map is an OrderedCollection of Associations; mandatory keys first."
-
-	| tonelVersion contentType canonicalName instance |
-	map size < 3 ifTrue: [ self error: 'Incomplete file information map' ].
-	tonelVersion := map removeFirst.
-	contentType := map removeFirst.
-	canonicalName := map removeFirst.
-	tonelVersion key = 'tonelVersion' ifFalse: [
-		self error: 'Expected key "tonelVersion," found ' , tonelVersion key ].
-	tonelVersion value = '1.0' ifFalse: [
-		self error: 'Unsupported Tonel version ' , tonelVersion value ].
-	contentType key = 'contentType' ifFalse: [
-		self error: 'Expected key "contentType," found ' , contentType key ].
-	canonicalName key = 'name' ifFalse: [
-		self error: 'Expected key "name," found ' , canonicalName key ].
-	instance := self new.
-	instance
-		tonelVersion: tonelVersion value;
-		contentType: contentType value;
-		canonicalName: canonicalName value;
-		optionalFileInfo: (TnNode dictionaryFromOrderedMap: map).
-	^ instance
-]
-
 { #category : 'accessing' }
 TnFileInfo >> canonicalName [
 

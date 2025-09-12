@@ -1,12 +1,12 @@
 Class {
-	#name : 'Tonel1ParserTest',
+	#name : 'TnParserTest',
 	#superclass : 'TestCase',
 	#category : 'TonelReadWrite-Tests',
 	#package : 'TonelReadWrite-Tests'
 }
 
 { #category : 'support' }
-Tonel1ParserTest >> _testFileDirectory [
+TnParserTest >> _testFileDirectory [
 	"Answer the directory where our test Tonel files reside."
 
 	| repo |
@@ -17,15 +17,15 @@ Tonel1ParserTest >> _testFileDirectory [
 ]
 
 { #category : 'support' }
-Tonel1ParserTest >> stackClassFile [
+TnParserTest >> stackClassFile [
 
 	^ self _testFileDirectory / 'Stack.class.st'
 ]
 
 { #category : 'tests' }
-Tonel1ParserTest >> testParseStack [
+TnParserTest >> testParseStack [
 
 	| parseResult |
-	parseResult := Tonel1Parser new parseFile: self stackClassFile.
+	parseResult := TnParser new parseFile: self stackClassFile.
 	self halt
 ]

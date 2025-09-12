@@ -4,7 +4,7 @@ Parser for Tonel version 1 files, according to the draft Tonel version 1 format 
 Uses the Pika parser (a PEG parser) to do the parsing into an object structure that reflects the structure of the file.
 "
 Class {
-	#name : 'Tonel1Parser',
+	#name : 'TnParser',
 	#superclass : 'PikaParser',
 	#category : 'TonelReadWrite-Core-Parser',
 	#package : 'TonelReadWrite-Core',
@@ -12,7 +12,7 @@ Class {
 }
 
 { #category : 'support' }
-Tonel1Parser class >> grammarSource [
+TnParser class >> grammarSource [
 	"self initializeGrammar"
 
 	"PEG grammar source code, which gets compiled to an actual Tonel grammar and cached in the 
@@ -54,9 +54,9 @@ Tonel1Parser class >> grammarSource [
 
 	SquareBracketsMethod <- ClassIdentification WsBlank methodSource:MethodSource WsNl "]" WsNl;
 	PropertiesMethod <- "Method " TonelMethodDescriptor;
-	ClassIdentification <- classIdentifier:ClassIdentifier WsBlank ">>";
+	ClassIdentification <- ClassIdentifier WsBlank ">>";
 	MethodSource <- MethodPattern WsBlank "[" WsNl SmalltalkCode;
-	ClassIdentifier <- ClassName isMeta:(WsBlank "class")?;
+	ClassIdentifier <- className:ClassName (WsBlank isMeta:"class")?;
 	ClassName <- (!Whitespace .)+;
 	MethodPattern <- (!(WsBlank "[") .)+;
 	SmalltalkCode <- (SmalltalkStringLiteral / SmalltalkComment / SmalltalkCharacterLiteral / SmalltalkBlock / OtherSmalltalkCode)*;
@@ -93,15 +93,86 @@ Tonel1Parser class >> grammarSource [
 ]
 
 { #category : 'private - astNodeLabels' }
-Tonel1Parser >> fileInfo: astNode [
+TnParser >> classDefinition: astNode [
 
-	| map |
-	map := self mapFromAst: astNode.
-	^ TnFileInfo fromMap: map
+	| classDefinition propertiesMap nameEntry superclassEntry methodsAst |
+	classDefinition := TnClassDefinition new.
+	propertiesMap := self
+		                 mapLabeled: 'classProperties'
+		                 fromAst: astNode firstChild.
+	nameEntry := propertiesMap removeFirst.
+	nameEntry key = 'name' ifFalse: [
+		self error: 'Expected key oflabel "name," found: ' , nameEntry key ].
+	classDefinition name: nameEntry value.
+	superclassEntry := propertiesMap removeFirst.
+	superclassEntry key = 'superclass' ifFalse: [
+		self error:
+			'Expected key of "superclass," found: ' , superclassEntry key ].
+	classDefinition superclassName: superclassEntry value.
+	classDefinition optionalProperties:
+		(self dictionaryFromOrderedMap: propertiesMap).
+	methodsAst := astNode secondChild.
+	methodsAst label = 'methods' ifFalse: [
+		self error: 'Expected label "methods," found: ' , methodsAst label ].
+	methodsAst children do: [ :methodAst |
+		classDefinition addMethod: (self visitAstNode: methodAst) ].
+	^ classDefinition
+]
+
+{ #category : 'private - astNodeLabels' }
+TnParser >> classProperties: astNode [
+
+	^ self mapFromAst: astNode
 ]
 
 { #category : 'private' }
-Tonel1Parser >> mapFromAst: astNode [
+TnParser >> dictionaryFromOrderedMap: map [
+	"Map is an OrderedCollection of Associations.
+	Check its ordering and answer an unordered but otherwise
+	equivalent Dictionary"
+
+	| dict previousKey |
+	dict := Dictionary new.
+	previousKey := ''.
+	map do: [ :each |
+		| currentKey |
+		currentKey := each key.
+		currentKey > previousKey ifFalse: [
+			self error: 'Keys not in canonical order: "' , currentKey
+				, '" is not greater than "' , previousKey , '"' ].
+		dict add: each.
+		previousKey := currentKey ].
+	^ dict
+]
+
+{ #category : 'private - astNodeLabels' }
+TnParser >> fileInfo: astNode [
+
+	| map fileInfo tonelVersion contentType canonicalName |
+	fileInfo := TnFileInfo new.
+	map := self mapFromAst: astNode.
+	map size < 3 ifTrue: [ self error: 'Incomplete file information map' ].
+	tonelVersion := map removeFirst.
+	contentType := map removeFirst.
+	canonicalName := map removeFirst.
+	tonelVersion key = 'tonelVersion' ifFalse: [
+		self error: 'Expected key "tonelVersion," found ' , tonelVersion key ].
+	tonelVersion value = '1.0' ifFalse: [
+		self error: 'Unsupported Tonel version ' , tonelVersion value ].
+	contentType key = 'contentType' ifFalse: [
+		self error: 'Expected key "contentType," found ' , contentType key ].
+	canonicalName key = 'name' ifFalse: [
+		self error: 'Expected key "name," found ' , canonicalName key ].
+	fileInfo
+		tonelVersion: tonelVersion value;
+		contentType: contentType value;
+		canonicalName: canonicalName value;
+		optionalFileInfo: (self dictionaryFromOrderedMap: map).
+	^ fileInfo
+]
+
+{ #category : 'private' }
+TnParser >> mapFromAst: astNode [
 	"astNode is the root of key/value pairs. Answer an OrderedCollection of 
 	Associations representing these pairs. Order is preserved for verifying
 	ordering in the file."
@@ -118,8 +189,20 @@ Tonel1Parser >> mapFromAst: astNode [
 	^ map
 ]
 
+{ #category : 'private' }
+TnParser >> mapLabeled: expectedLabel fromAst: astNode [
+	"astNode is the root of key/value pairs. Answer an OrderedCollection of 
+	Associations representing these pairs. Order is preserved for verifying
+	ordering in the file."
+
+	astNode label = expectedLabel ifFalse: [
+		self error:
+			'Expected label "classProperties," found: ' , astNode label ].
+	^ self mapFromAst: astNode
+]
+
 { #category : 'parsing' }
-Tonel1Parser >> parse: sourceString [
+TnParser >> parse: sourceString [
 
 	| astRoot |
 	astRoot := self parseToAst: sourceString.
@@ -128,14 +211,46 @@ Tonel1Parser >> parse: sourceString [
 	^ astRoot
 ]
 
+{ #category : 'private - astNodeLabels' }
+TnParser >> squareBracketsMethod: astNode [
+
+	| methodDefinition propertiesAst classNameAst isMetaAst methodSourceAst |
+	methodDefinition := TnMethodDefinition new.
+	"squareBracketsNode can have up to four children. isMeta only appears 
+	when it's a class method, and the properties are optional."
+	propertiesAst := classNameAst := isMetaAst := methodSourceAst := nil. "lint"
+	astNode children do: [ :childAst |
+		| label |
+		label := childAst label.
+		label = 'methodProperties'
+			ifTrue: [ propertiesAst := childAst ]
+			ifFalse: [
+				label = 'className'
+					ifTrue: [ classNameAst := childAst ]
+					ifFalse: [
+						label = 'isMeta'
+							ifTrue: [ isMetaAst := childAst ]
+							ifFalse: [
+								label = 'methodSource'
+									ifTrue: [ methodSourceAst := childAst ]
+									ifFalse: [ self error: 'Unexpected method label: ' , label ] ] ] ] ].
+	propertiesAst ifNotNil: [
+		methodDefinition properties:
+			(self dictionaryFromOrderedMap: (self mapFromAst: propertiesAst)) ].
+	methodDefinition definingClass: classNameAst text.
+	isMetaAst ifNotNil: [ methodDefinition isMeta: true ].
+	methodDefinition source: methodSourceAst text.
+	^ methodDefinition
+]
+
 { #category : 'private' }
-Tonel1Parser >> syntaxCoverageRules [
+TnParser >> syntaxCoverageRules [
 
 	^ #( ClassDefinitionFile DescribedSmalltalkMethod SquareBracketsMethod Map Comment Whitespace )
 ]
 
 { #category : 'private - astNodeLabels' }
-Tonel1Parser >> tonelFile: astNode [
+TnParser >> tonelFile: astNode [
 
 	| typedAstNode fileClass fileNode |
 	typedAstNode := astNode onlyChild.
@@ -151,7 +266,7 @@ Tonel1Parser >> tonelFile: astNode [
 ]
 
 { #category : 'parsing' }
-Tonel1Parser >> tonelGrammar [
+TnParser >> tonelGrammar [
 
 	^ self class tonelGrammar
 ]
