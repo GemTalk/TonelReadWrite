@@ -13,6 +13,12 @@ Class {
 	#category : 'Collections-Stack'
 }
 
+{ #category : 'utilities' }
+Stack class >> bogus [
+	"Does nothing"
+	^ self
+]
+
 { #category : 'removing' }
 Stack >> pop [
 	"Returns the first element and remove it from the stack."
@@ -20,7 +26,6 @@ Stack >> pop [
 	^self  removeFirst
 ]
 
-{ #category : 'adding' }
 Stack >> push: anObject [
 	"Adds a new object of any kind on top of the stack."
 	self addFirst: anObject.
