@@ -2,14 +2,24 @@ Class {
 	#name : 'TnClassDefinitionFile',
 	#superclass : 'TnFile',
 	#instVars : [
-		'classDefinition',
-		'classMethods',
-		'instanceMethods'
+		'classDefinition'
 	],
 	#category : 'TonelReadWrite-Core-Model',
 	#package : 'TonelReadWrite-Core',
 	#tag : 'Model'
 }
+
+{ #category : 'accessing' }
+TnClassDefinitionFile >> classDefinition [
+
+	^ classDefinition
+]
+
+{ #category : 'accessing' }
+TnClassDefinitionFile >> classDefinition: anObject [
+
+	classDefinition := anObject
+]
 
 { #category : 'accessing' }
 TnClassDefinitionFile >> fileInfo: aFileInfo [

@@ -47,7 +47,7 @@ TnParser class >> grammarSource [
 	SimpleSymbol <- "#" key:SimpleSymbolChar+;
 	SimpleSymbolChar <- [A-Z] / [a-z] / [0-9] / "-" / "_" / "." / "/";
 
-	Comment <- "\"" ((!"\"" .) / "\"\"")* "\"" WsNl;
+	Comment <- "\"" WsNl comment:(!(WsNl "\"") .)* WsNl "\"" WsNl;
 	
 	DescribedSmalltalkMethod <- squareBracketsMethod:(TonelMethodDescriptor? SquareBracketsMethod) / 
 		propertiesMethod:PropertiesMethod;
@@ -55,7 +55,7 @@ TnParser class >> grammarSource [
 	SquareBracketsMethod <- ClassIdentification WsBlank methodSource:MethodSource WsNl "]" WsNl;
 	PropertiesMethod <- "Method " TonelMethodDescriptor;
 	ClassIdentification <- ClassIdentifier WsBlank ">>";
-	MethodSource <- MethodPattern WsBlank "[" WsNl SmalltalkCode;
+	MethodSource <- methodPattern:(MethodPattern WsBlank) "[" WsNl SmalltalkCode;
 	ClassIdentifier <- className:ClassName (WsBlank isMeta:"class")?;
 	ClassName <- (!Whitespace .)+;
 	MethodPattern <- (!(WsBlank "[") .)+;
@@ -66,14 +66,14 @@ TnParser class >> grammarSource [
 	SmalltalkBlock <- "[" SmalltalkCode "]";
 	OtherSmalltalkCode <- (!("\"" / "\''" / "$" / "[" / (WsNl "]")) .)+;
 		
-	ClassProperties <- Comment? ClassPropertiesObject;
+	ClassProperties <- Comment? classProperties:ClassPropertiesObject;
 	PackageProperties <- Comment? PackagePropertiesObject;
 	PackagePropertiesFile <- TonelFileObject WsNl PackageProperties !.;
 	ClassDefinitionPropertiesFile <- TonelFileObject WsNl ClassProperties !.;
 	ClassExtensionPropertiesFile <- TonelFileObject WsNl TonelClassExtensionObject !.;
 	TonelMethodFile <- TonelFileObject WsNl DescribedSmalltalkMethod !.;
 	ClassDefinitionFile <- TonelFileObject WsNl classDefinition:ClassDefinition !.;
-	ClassDefinition <- classProperties:ClassProperties (WsNl methods:SmalltalkMethods)?;
+	ClassDefinition <- ClassProperties (WsNl methods:SmalltalkMethods)?;
 	SmalltalkMethods <- (DescribedSmalltalkMethod WsNl SmalltalkMethods) / DescribedSmalltalkMethod;
 	ClassExtensionFile <- TonelFileObject WsNl ClassExtension !.;
 	ClassExtension <- TonelClassExtensionObject WsNl SmalltalkMethods;
@@ -95,11 +95,20 @@ TnParser class >> grammarSource [
 { #category : 'private - astNodeLabels' }
 TnParser >> classDefinition: astNode [
 
-	| classDefinition propertiesMap nameEntry superclassEntry methodsAst |
+	| classDefinition propertiesAst propertiesMap nameEntry superclassEntry methodsAst |
 	classDefinition := TnClassDefinition new.
+	astNode firstChild label = 'comment'
+		ifTrue: [
+			propertiesAst := astNode secondChild.
+			methodsAst := astNode thirdChild.
+			classDefinition comment:
+				(self unDoubleCommentQuotesIn: astNode firstChild text) ]
+		ifFalse: [
+			propertiesAst := astNode firstChild.
+			methodsAst := astNode secondChild ].
 	propertiesMap := self
 		                 mapLabeled: 'classProperties'
-		                 fromAst: astNode firstChild.
+		                 fromAst: propertiesAst.
 	nameEntry := propertiesMap removeFirst.
 	nameEntry key = 'name' ifFalse: [
 		self error: 'Expected key oflabel "name," found: ' , nameEntry key ].
@@ -111,7 +120,6 @@ TnParser >> classDefinition: astNode [
 	classDefinition superclassName: superclassEntry value.
 	classDefinition optionalProperties:
 		(self dictionaryFromOrderedMap: propertiesMap).
-	methodsAst := astNode secondChild.
 	methodsAst label = 'methods' ifFalse: [
 		self error: 'Expected label "methods," found: ' , methodsAst label ].
 	methodsAst children do: [ :methodAst |
@@ -211,6 +219,51 @@ TnParser >> parse: sourceString [
 	^ astRoot
 ]
 
+{ #category : 'private' }
+TnParser >> parsePattern: patternString [
+
+	| parser |
+	parser := TnMethodPatternParser new.
+	^ parser parse: patternString
+]
+
+{ #category : 'private - astNodeLabels' }
+TnParser >> propertiesMethod: astNode [
+
+	| methodDefinition map currentMapEntry currentValue |
+	methodDefinition := TnMethodDefinition new.
+	map := self mapFromAst: astNode onlyChild.
+	map size < 4 ifTrue: [
+		self error: 'Expected at least four properties, found only '
+			, map size printString ].
+	currentMapEntry := map removeFirst.
+	currentMapEntry key = 'class' ifFalse: [
+		self error: 'Expected key "class," found: ' , currentMapEntry key ].
+	methodDefinition definingClass: currentMapEntry value.
+	currentMapEntry := map removeFirst.
+	currentMapEntry key = 'selector' ifFalse: [
+		self error: 'Expected key "selector," found: ' , currentMapEntry key ].
+	methodDefinition selector: currentMapEntry value.
+	currentMapEntry := map removeFirst.
+	currentMapEntry key = 'isMeta' ifFalse: [
+		self error: 'Expected key "class," found: ' , currentMapEntry key ].
+	currentValue := currentMapEntry value.
+	currentValue = 'true'
+		ifTrue: [ methodDefinition isMeta: true ]
+		ifFalse: [
+			currentValue = 'false'
+				ifTrue: [ methodDefinition isMeta: false ]
+				ifFalse: [
+					self error:
+						'Expected value of "true" or "false," found: ' , currentValue ] ].
+	currentMapEntry := map removeFirst.
+	currentMapEntry key = 'source' ifFalse: [
+		self error: 'Expected key "source," found: ' , currentMapEntry key ].
+	methodDefinition source: currentMapEntry value;
+		properties: (self dictionaryFromOrderedMap: map).
+	^ methodDefinition
+]
+
 { #category : 'private - astNodeLabels' }
 TnParser >> squareBracketsMethod: astNode [
 
@@ -239,7 +292,9 @@ TnParser >> squareBracketsMethod: astNode [
 			(self dictionaryFromOrderedMap: (self mapFromAst: propertiesAst)) ].
 	methodDefinition definingClass: classNameAst text.
 	isMetaAst ifNotNil: [ methodDefinition isMeta: true ].
-	methodDefinition source: methodSourceAst text.
+	methodDefinition
+		source: methodSourceAst text;
+		selector: (self parsePattern: methodSourceAst onlyChild text).
 	^ methodDefinition
 ]
 
@@ -262,11 +317,36 @@ TnParser >> tonelFile: astNode [
 		| selector node |
 		node := self visitAstNode: childAst.
 		selector := (childAst label , ':') asSymbol.
-		fileNode perform: selector with: node ]
+		fileNode perform: selector with: node ].
+	^ fileNode
 ]
 
 { #category : 'parsing' }
 TnParser >> tonelGrammar [
 
 	^ self class tonelGrammar
+]
+
+{ #category : 'private' }
+TnParser >> unDoubleCommentQuotesIn: commentString [
+	"The commentString is assumed to be the product of parsing a Tonel file,
+	so any double quotes in the string will appear in pairs. 
+	Return a string with each pair of double quotes replaced by a single double quote."
+
+	| inStream outStream emitQuote |
+	emitQuote := false.
+	inStream := ReadStream on: commentString.
+	outStream := WriteStream on: (String new: commentString size).
+	[ inStream atEnd not ] whileTrue: [
+		| thisChar |
+		thisChar := inStream next.
+		thisChar ~= $"
+			ifTrue: [ outStream nextPut: thisChar ]
+			ifFalse: [
+				emitQuote
+					ifTrue: [
+						emitQuote := false.
+						outStream nextPut: $" ]
+					ifFalse: [ emitQuote := true ] ] ].
+	^ outStream contents
 ]

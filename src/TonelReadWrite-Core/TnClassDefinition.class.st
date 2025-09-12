@@ -2,11 +2,12 @@ Class {
 	#name : 'TnClassDefinition',
 	#superclass : 'TnNode',
 	#instVars : [
+		'comment',
+		'name',
 		'superclassName',
-		'optionalProperties',
 		'instanceMethods',
 		'classMethods',
-		'name'
+		'optionalProperties'
 	],
 	#category : 'TonelReadWrite-Core-Model',
 	#package : 'TonelReadWrite-Core',
@@ -42,6 +43,18 @@ TnClassDefinition >> classMethods [
 TnClassDefinition >> classMethods: anObject [
 
 	classMethods := anObject
+]
+
+{ #category : 'accessing' }
+TnClassDefinition >> comment [
+
+	^ comment
+]
+
+{ #category : 'accessing' }
+TnClassDefinition >> comment: anObject [
+
+	comment := anObject
 ]
 
 { #category : 'initializing' }
