@@ -1,11 +1,13 @@
 TonelFile {
 	#tonelVersion : '1.0',
 	#contentType : 'classFile',
-	#name : 'Stack.class.st'
+	#name : 'Stack.class.st',
+	#gs_Example : 'This is an optional property'
 }
 
 "
-I implement a simple ""stack."" #push: adds a new object of any kind on top of the stack. #pop returns the first element and remove it from the stack. #top answer the first element of the stack without removing it.
+I implement a simple ""stack."" #push: adds a new object of any kind on top of the stack. #pop returns the first
+""element"" and remove it from the stack. #top answer the first element of the stack without removing it.
 "
 Class {
 	#name : 'Stack',
@@ -38,8 +40,8 @@ Method {
 	#isMeta : 'false',
 	#source : 'top
 	"Answer the first element of the stack without removing it."
-	<primitive>
-	{some crazy code in who knows what language with mismatched
+	<primitive> \'
+	{some crazy code in who knows what language with mismatched \\
 	braces/square brackets]',
 	#category : 'accessing'
 }
