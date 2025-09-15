@@ -1,3 +1,7 @@
+"
+Tests that valid test files can be parsed to a model and re-written from that model without change.
+Let's also see how Pharo Tonel handles ""double quotes.""
+"
 Class {
 	#name : 'TnParserTest',
 	#superclass : 'TestCase',
@@ -25,7 +29,12 @@ TnParserTest >> stackClassFile [
 { #category : 'tests' }
 TnParserTest >> testParseStack [
 
-	| parseResult |
-	parseResult := TnParser new parseFile: self stackClassFile.
-	self halt
+	| inputFile inputString parseResult outStream |
+	inputFile := self stackClassFile.
+	inputString := inputFile contents.
+	parseResult := TnParser new parseFile: inputFile.
+	self assert: parseResult class identicalTo: TnClassDefinitionFile.
+	outStream := WriteStream on: (String new: inputString size).
+	parseResult writeOn: outStream.
+	self assert: outStream contents equals: inputString
 ]

@@ -59,3 +59,17 @@ TnFileInfo >> tonelVersion: anObject [
 
 	tonelVersion := anObject
 ]
+
+{ #category : 'writing' }
+TnFileInfo >> writeOn: aStream [
+	"Write my contents on aStream, in Tonel format."
+
+	self
+		writeMapNamed: 'TonelFile'
+		withRequiredProperties: {
+				('tonelVersion' -> tonelVersion).
+				('contentType' -> contentType).
+				('name' -> canonicalName) }
+		optionalProperties: optionalFileInfo
+		on: aStream
+]

@@ -23,3 +23,10 @@ TnFile >> fileInfo: anObject [
 
 	fileInfo := anObject
 ]
+
+{ #category : 'writing' }
+TnFile >> writeOn: aStream [
+	"Write my contents on aStream, in Tonel format."
+	
+	fileInfo writeOn: aStream
+]

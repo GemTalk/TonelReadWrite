@@ -34,3 +34,10 @@ TnClassDefinitionFile >> fileInfo: aFileInfo [
 			, aFileInfo canonicalName ].
 	super fileInfo: aFileInfo
 ]
+
+{ #category : 'writing' }
+TnClassDefinitionFile >> writeOn: aStream [
+
+	super writeOn: aStream.
+	classDefinition writeOn: aStream
+]

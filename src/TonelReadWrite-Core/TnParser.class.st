@@ -190,7 +190,7 @@ TnParser >> mapFromAst: astNode [
 	currentKey := nil. "lint"
 	astNode children do: [ :child |
 		| text |
-		text := child text.
+		text := self unescape: child text.
 		child label = 'key'
 			ifTrue: [ currentKey := text ]
 			ifFalse: [ map add: currentKey -> text ] ].
@@ -348,5 +348,27 @@ TnParser >> unDoubleCommentQuotesIn: commentString [
 						emitQuote := false.
 						outStream nextPut: $" ]
 					ifFalse: [ emitQuote := true ] ] ].
+	^ outStream contents
+]
+
+{ #category : 'private' }
+TnParser >> unescape: inputString [
+	"Answer a copy of the inputString with \' and \\ replaced by ' and \"
+
+	| inStream outStream |
+	inStream := ReadStream on: inputString.
+	outStream := WriteStream on: (String new: inputString size).
+	[ inStream atEnd ] whileFalse: [
+		| char |
+		char := inStream next.
+		char == $\ ifTrue: [ "Handle escape"
+			inStream atEnd ifTrue: [
+				self error:
+					'Incomplete escape sequence at end of string: ' , inputString ].
+			char := inStream next.
+			(char ~~ $' and: [ char ~~ $\ ]) ifTrue: [
+				self error:
+					'Unrecognized escape sequence: \' , (String with: char) ] ].
+		outStream nextPut: char ].
 	^ outStream contents
 ]

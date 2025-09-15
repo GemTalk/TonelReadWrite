@@ -112,3 +112,17 @@ TnClassDefinition >> superclassName: anObject [
 
 	superclassName := anObject
 ]
+
+{ #category : 'writing' }
+TnClassDefinition >> writeOn: aStream [
+	"Write my contents on aStream, in Tonel format."
+
+	comment ifNotNil: [ self writeComment: comment on: aStream ].
+	self
+		writeMapNamed: 'Class'
+		withRequiredProperties: {
+				('name' -> name).
+				('superclass' -> superclassName) }
+		optionalProperties: optionalProperties
+		on: aStream
+]
