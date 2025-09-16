@@ -39,5 +39,6 @@ TnClassDefinitionFile >> fileInfo: aFileInfo [
 TnClassDefinitionFile >> writeOn: aStream [
 
 	super writeOn: aStream.
+	aStream lf.
 	classDefinition writeOn: aStream
 ]

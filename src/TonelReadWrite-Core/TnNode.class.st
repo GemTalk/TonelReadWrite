@@ -9,6 +9,17 @@ Class {
 	#tag : 'Model'
 }
 
+{ #category : 'private' }
+TnNode >> sortAndWriteDictionary: inputDictionary on: aStream [
+
+	| sorted |
+	sorted := SortedCollection sortUsing: #key ascending.
+	sorted addAll: inputDictionary associations.
+	sorted do: [ :each |
+		aStream lf.
+		each value writeOn: aStream ]
+]
+
 { #category : 'accessing' }
 TnNode >> sourceReference [
 
@@ -22,39 +33,90 @@ TnNode >> sourceReference: anObject [
 ]
 
 { #category : 'private' }
+TnNode >> writeAssociation: each on: aStream [
+
+	aStream
+		<< '#';
+		<< each key;
+		space;
+		<< ':';
+		space;
+		<< each value printString
+]
+
+{ #category : 'private' }
+TnNode >> writeComment: commentString on: outStream [
+
+	| inStream |
+	commentString isEmpty ifTrue: [
+		self error: 'Empty comment prohibited by spec' ].
+	outStream
+		<< '"';
+		lf.
+	inStream := ReadStream on: commentString.
+	[ inStream atEnd ] whileFalse: [
+		| char |
+		char := inStream next.
+		char == $" ifTrue: [ outStream nextPut: $" ].
+		outStream nextPut: char ].
+	outStream
+		lf;
+		<< '"';
+		lf
+]
+
+{ #category : 'private' }
 TnNode >> writeMapEntries: associations on: aStream [
 
 	associations do: [ :each |
 		aStream
 			lf;
-			tab;
-			<< '#';
-			<< each key;
-			space;
-			<< ':';
-			space;
-			<< each value printString;
-			<< ',' ]
+			tab.
+		self writeAssociation: each on: aStream.
+		aStream << ',' ]
+]
+
+{ #category : 'private' }
+TnNode >> writeMapName: mapName on: aStream [
+
+	mapName ifNil: [ ^ self ].
+	aStream
+		<< mapName;
+		space
 ]
 
 { #category : 'private' }
 TnNode >> writeMapNamed: mapName withRequiredProperties: requiredProperties optionalProperties: optionalPropertiesDict on: aStream [
+
+	"Overwrite that last comma"
+	self writeMapName: mapName on: aStream.
+	requiredProperties size + optionalPropertiesDict size > 1 ifFalse: [
+		^ self
+			  writeSingleEntryMapWithRequiredProperties: requiredProperties
+			  optionalProperties: optionalPropertiesDict
+			  on: aStream ].
+	self
+		writeMultipleEntryMapWithRequiredProperties: requiredProperties
+		optionalProperties: optionalPropertiesDict
+		on: aStream
+]
+
+{ #category : 'private' }
+TnNode >> writeMultipleEntryMapWithRequiredProperties: requiredProperties optionalProperties: optionalPropertiesDict on: aStream [
 
 	| sortedOptionalProperties |
 	sortedOptionalProperties := SortedCollection sortUsing:
 		                            #key ascending.
 	sortedOptionalProperties addAll: optionalPropertiesDict associations.
 	aStream
-		<< mapName;
-		space;
-		<< '{'.
+		<< '{';
+		lf.
 	self
 		writeMapEntries: requiredProperties on: aStream;
 		writeMapEntries: sortedOptionalProperties on: aStream.
 	aStream
 		skip: -1;
-		"Overwrite that last comma"
-		lf;
+		"Overwrite that last comma"lf;
 		<< '}';
 		lf
 ]
@@ -64,4 +126,25 @@ TnNode >> writeOn: aStream [
 	"Write my contents on aStream, in Tonel format."
 
 	self subclassResponsibility
+]
+
+{ #category : 'writing' }
+TnNode >> writeSingleEntryMapWithRequiredProperties: requiredProperties optionalProperties: optionalPropertiesDict on: aStream [
+
+	| association |
+	requiredProperties
+		ifEmpty: [
+			| props |
+			props := optionalPropertiesDict associations.
+			self assert: props size = 1.
+			association := props first ]
+		ifNotEmpty: [
+			self assert: optionalPropertiesDict isEmpty.
+			self assert: requiredProperties size = 1.
+			association := requiredProperties first ].
+	aStream << '{ '.
+	self writeAssociation: association on: aStream.
+	aStream
+		<< ' }';
+		lf
 ]

@@ -32,7 +32,7 @@ TnParserTest >> testParseStack [
 	| inputFile inputString parseResult outStream |
 	inputFile := self stackClassFile.
 	inputString := inputFile contents.
-	parseResult := TnParser new parseFile: inputFile.
+	parseResult := TnFileParser new parseFile: inputFile.
 	self assert: parseResult class identicalTo: TnClassDefinitionFile.
 	outStream := WriteStream on: (String new: inputString size).
 	parseResult writeOn: outStream.

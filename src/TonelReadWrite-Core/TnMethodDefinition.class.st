@@ -13,6 +13,17 @@ Class {
 	#tag : 'Model'
 }
 
+{ #category : 'private' }
+TnMethodDefinition >> canBeWrittenAsSquareBracketMethod [
+
+	| parser |
+	parser := TnSquareBracketsParser new.
+	[ parser parse: source ]
+		on: PikaSyntaxError 
+		do: [ ^ false ].
+	^ true
+]
+
 { #category : 'accessing' }
 TnMethodDefinition >> definingClass [
 
@@ -78,4 +89,13 @@ TnMethodDefinition >> source [
 TnMethodDefinition >> source: anObject [
 
 	source := anObject
+]
+
+{ #category : 'writing' }
+TnMethodDefinition >> writeOn: aStream [
+	"Write my contents on aStream, in Tonel format."
+
+	self canBeWrittenAsSquareBracketMethod
+		ifTrue: [ self writeAsSquareBracketMethodOn: aStream ]
+		ifFalse: [ self writeAsPropertiesMethodOn: aStream ]
 ]

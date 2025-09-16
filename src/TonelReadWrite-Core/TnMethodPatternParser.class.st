@@ -17,7 +17,7 @@ TnMethodPatternParser class >> grammarSource [
 	MessagePattern <- 
 		messagePattern:(unarySelector:Identifier Space 
 			/ binarySelector:BinarySelector Space Identifier Space 
-			/ keywords:(keyword:Keyword Space Identifier Space)+);
+			/ keywords:(keyword:Keyword Space Identifier Space)+ !.);
 	Keyword <- Identifier ":";
 	BinarySelector <- BinaryCharacter+;
 	BinaryCharacter <- [+/\\*~<>=@%|&?!\-,];

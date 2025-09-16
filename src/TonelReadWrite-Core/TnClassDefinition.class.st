@@ -113,6 +113,14 @@ TnClassDefinition >> superclassName: anObject [
 	superclassName := anObject
 ]
 
+{ #category : 'private' }
+TnClassDefinition >> writeMethodsOn: aStream [
+
+	self
+		sortAndWriteDictionary: classMethods on: aStream;
+		sortAndWriteDictionary: instanceMethods on: aStream
+]
+
 { #category : 'writing' }
 TnClassDefinition >> writeOn: aStream [
 	"Write my contents on aStream, in Tonel format."
@@ -124,5 +132,6 @@ TnClassDefinition >> writeOn: aStream [
 				('name' -> name).
 				('superclass' -> superclassName) }
 		optionalProperties: optionalProperties
-		on: aStream
+		on: aStream;
+		writeMethodsOn: aStream
 ]
