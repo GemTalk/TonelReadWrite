@@ -11,7 +11,7 @@ Class {
 { #category : 'support' }
 TnMethodPatternParserTest >> setUp [
 
-	parser := TnMethodPatternParser new
+	parser := TnMessagePatternParser new
 ]
 
 { #category : 'tests' }

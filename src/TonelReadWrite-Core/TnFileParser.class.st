@@ -71,15 +71,14 @@ TnFileParser class >> grammarSource [
 		propertiesMethod:PropertiesMethod;
 
 	PropertiesMethod <- "Method " TonelMethodDescriptor;
-	SquareBracketsMethod <- ClassIdentification WsBlank methodSource:MethodSource WsNl "]" WsNl;
+	SquareBracketsMethod <- ClassIdentification WsBlank messagePattern:MessagePattern "[" WsNl 
+		((!"]" methodBody:SmalltalkCode WsNl "]") / "]") WsNl;
 	ClassIdentification <- ClassIdentifier WsBlank ">>";
 	ClassIdentifier <- className:ClassName (WsBlank isMeta:"class")?;
 	ClassName <- (!Whitespace .)+;
 
 	WsTab <- "\t";
 	WsTabTab <- WsTab WsTab;
-	Whitespace <- (WsBlank / WsTab / WsNl)+; 
-
 		' , self squareBracketsGrammarSource
 ]
 
@@ -124,26 +123,6 @@ TnFileParser >> classProperties: astNode [
 	^ self mapFromAst: astNode
 ]
 
-{ #category : 'private' }
-TnFileParser >> dictionaryFromOrderedMap: map [
-	"Map is an OrderedCollection of Associations.
-	Check its ordering and answer an unordered but otherwise
-	equivalent Dictionary"
-
-	| dict previousKey |
-	dict := Dictionary new.
-	previousKey := ''.
-	map do: [ :each |
-		| currentKey |
-		currentKey := each key.
-		currentKey > previousKey ifFalse: [
-			self error: 'Keys not in canonical order: "' , currentKey
-				, '" is not greater than "' , previousKey , '"' ].
-		dict add: each.
-		previousKey := currentKey ].
-	^ dict
-]
-
 { #category : 'private - astNodeLabels' }
 TnFileParser >> fileInfo: astNode [
 
@@ -168,24 +147,6 @@ TnFileParser >> fileInfo: astNode [
 		canonicalName: canonicalName value;
 		optionalFileInfo: (self dictionaryFromOrderedMap: map).
 	^ fileInfo
-]
-
-{ #category : 'private' }
-TnFileParser >> mapFromAst: astNode [
-	"astNode is the root of key/value pairs. Answer an OrderedCollection of 
-	Associations representing these pairs. Order is preserved for verifying
-	ordering in the file."
-
-	| map currentKey |
-	map := OrderedCollection new.
-	currentKey := nil. "lint"
-	astNode children do: [ :child |
-		| text |
-		text := self unescape: child text.
-		child label = 'key'
-			ifTrue: [ currentKey := text ]
-			ifFalse: [ map add: currentKey -> text ] ].
-	^ map
 ]
 
 { #category : 'private' }
@@ -214,7 +175,7 @@ TnFileParser >> parse: sourceString [
 TnFileParser >> parsePattern: patternString [
 
 	| parser |
-	parser := TnMethodPatternParser new.
+	parser := TnMessagePatternParser new.
 	^ parser parse: patternString
 ]
 
@@ -257,6 +218,12 @@ TnFileParser >> propertiesMethod: astNode [
 
 { #category : 'private - astNodeLabels' }
 TnFileParser >> squareBracketsMethod: astNode [
+
+	^ TnMethodDefinition fromSquareBracketsAst: astNode
+]
+
+{ #category : 'private - astNodeLabels' }
+TnFileParser >> squareBracketsMethodOld: astNode [
 
 	| methodDefinition propertiesAst classNameAst isMetaAst methodSourceAst |
 	methodDefinition := TnMethodDefinition new.
@@ -343,27 +310,5 @@ TnFileParser >> unDoubleCommentQuotesIn: commentString [
 						emitQuote := false.
 						outStream nextPut: $" ]
 					ifFalse: [ emitQuote := true ] ] ].
-	^ outStream contents
-]
-
-{ #category : 'private' }
-TnFileParser >> unescape: inputString [
-	"Answer a copy of the inputString with \' and \\ replaced by ' and \"
-
-	| inStream outStream |
-	inStream := ReadStream on: inputString.
-	outStream := WriteStream on: (String new: inputString size).
-	[ inStream atEnd ] whileFalse: [
-		| char |
-		char := inStream next.
-		char == $\ ifTrue: [ "Handle escape"
-			inStream atEnd ifTrue: [
-				self error:
-					'Incomplete escape sequence at end of string: ' , inputString ].
-			char := inStream next.
-			(char ~~ $' and: [ char ~~ $\ ]) ifTrue: [
-				self error:
-					'Unrecognized escape sequence: \' , (String with: char) ] ].
-		outStream nextPut: char ].
 	^ outStream contents
 ]

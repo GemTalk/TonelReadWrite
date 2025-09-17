@@ -12,6 +12,7 @@ TnSquareBracketsParser class >> grammarSource [
 
 	^ '
 	start <- code:(MethodSource !.);
+	MethodSource <- messagePattern:(MessagePattern) "[" WsNl SmalltalkCode;
 	' , self squareBracketsGrammarSource
 ]
 

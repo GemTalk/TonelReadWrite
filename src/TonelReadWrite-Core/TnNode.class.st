@@ -1,6 +1,6 @@
 Class {
 	#name : 'TnNode',
-	#superclass : 'Object',
+	#superclass : 'TnParser',
 	#instVars : [
 		'sourceReference'
 	],

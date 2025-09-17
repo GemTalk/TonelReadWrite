@@ -2,40 +2,28 @@
 A small parser for extracting selectors out of a method pattern; useful in parsing Tonel files.
 "
 Class {
-	#name : 'TnMethodPatternParser',
-	#superclass : 'PikaParser',
+	#name : 'TnMessagePatternParser',
+	#superclass : 'TnParser',
 	#category : 'TonelReadWrite-Core-Parser',
 	#package : 'TonelReadWrite-Core',
 	#tag : 'Parser'
 }
 
 { #category : 'support' }
-TnMethodPatternParser class >> grammarSource [
+TnMessagePatternParser class >> grammarSource [
 	"self initializeGrammar"
 
-	^ '
-	MessagePattern <- 
-		messagePattern:(unarySelector:Identifier Space 
-			/ binarySelector:BinarySelector Space Identifier Space 
-			/ keywords:(keyword:Keyword Space Identifier Space)+ !.);
-	Keyword <- Identifier ":";
-	BinarySelector <- BinaryCharacter+;
-	BinaryCharacter <- [+/\\*~<>=@%|&?!\-,];
-	Identifier <- Letter (Letter / Digit)*;
-	Letter <- [A-Za-z_];
-	Digit <- [0-9];
-	Space <- " ";
-	'
+	^ self messagePatternGrammarSource
 ]
 
 { #category : 'private - astNodeLabels' }
-TnMethodPatternParser >> binarySelector: astNode [
+TnMessagePatternParser >> binarySelector: astNode [
 
 	^ astNode text
 ]
 
 { #category : 'private - astNodeLabels' }
-TnMethodPatternParser >> keywords: astNode [
+TnMessagePatternParser >> keywords: astNode [
 
 	| result |
 	result := ''.
@@ -45,26 +33,26 @@ TnMethodPatternParser >> keywords: astNode [
 ]
 
 { #category : 'private - astNodeLabels' }
-TnMethodPatternParser >> messagePattern: astNode [
+TnMessagePatternParser >> messagePattern: astNode [
 
 	^ self visitAstNode: astNode onlyChild
 ]
 
 { #category : 'testing' }
-TnMethodPatternParser >> shouldRecordSourceLocations [
+TnMessagePatternParser >> shouldRecordSourceLocations [
 
 	^ false
 ]
 
 { #category : 'private' }
-TnMethodPatternParser >> syntaxCoverageRules [
+TnMessagePatternParser >> syntaxCoverageRules [
 	"This method should answer a collection of rule names that, between them, should cover all input text."
 
 	^ #( 'MessagePattern' )
 ]
 
 { #category : 'private - astNodeLabels' }
-TnMethodPatternParser >> unarySelector: astNode [
+TnMessagePatternParser >> unarySelector: astNode [
 
 	^ astNode text
 ]
