@@ -21,6 +21,16 @@ Stack class >> bogus [
 	^ self
 ]
 
+Stack class >> sum: addend with: augend [
+	"This method does not belong in this class"
+	^ addend + augend
+]
+
+{ #category : 'nonsense' }
+Stack >> + element [
+	^ self push: element
+]
+
 { #category : 'removing' }
 Stack >> pop [
 	"Returns the first element and remove it from the stack."
@@ -45,3 +55,7 @@ Method {
 	braces/square brackets]',
 	#category : 'accessing'
 }
+
+{ #category : 'nonsense' }
+Stack >> yourself [
+]
