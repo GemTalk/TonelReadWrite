@@ -157,7 +157,7 @@ TnMethodDefinition >> selectorFromPatternAst: astNode [
 	| stream |
 	stream := WriteStream on: (String new: astNode text size).
 	astNode children do: [ :child |
-		child label = 'arg' ifFalse: [ stream nextPutAll: child text ] ].
+		child label = 'selectorPart' ifTrue: [ stream nextPutAll: child text ] ].
 	^ stream contents
 ]
 
