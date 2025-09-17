@@ -1,6 +1,8 @@
 Class {
 	#name : 'TnNode',
-	#superclass : 'TnParser',
+	#superclass : 'Object',
+	#traits : 'TTnAstTools',
+	#classTraits : 'TTnAstTools classTrait',
 	#instVars : [
 		'sourceReference'
 	],
