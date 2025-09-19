@@ -35,7 +35,14 @@ TnMessagePatternParser >> keywords: astNode [
 { #category : 'private - astNodeLabels' }
 TnMessagePatternParser >> messagePattern: astNode [
 
-	^ self visitAstNode: astNode onlyChild
+	^ astNode text
+]
+
+{ #category : 'private - astNodeLabels' }
+TnMessagePatternParser >> patternAndWhitespace: astNode [
+	"For the moment, just interested in the pattern"
+
+	^ self visitAstNode: astNode firstChild
 ]
 
 { #category : 'testing' }

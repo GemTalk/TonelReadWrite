@@ -26,28 +26,60 @@ TnFileParser class >> grammarSource [
 		TnPackagePropertiesFile:PackagePropertiesFile / TnClassDefinitionPropertiesFile:ClassDefinitionPropertiesFile /
 		TnClassExtensionPropertiesFile:ClassExtensionPropertiesFile / TnMethodFile:TonelMethodFile / 
 		TnPackageFile:PackageFile);
-	TonelFileObject <- "TonelFile" WsBlank fileInfo:Map;
-	PackagePropertiesObject <- "Package" WsBlank packageInfo:Map;
-	ClassPropertiesObject <- "Class" WsBlank Map;
-	TonelClassExtensionObject <- "Extension" WsBlank classExtension:Map;
-	TonelMethodDescriptor <- methodProperties:Map;
-
-	ClassProperties <- Comment? classProperties:ClassPropertiesObject;
-	PackageProperties <- Comment? PackagePropertiesObject;
+	ClassDefinitionFile <- TonelFileObject WsNl classDefinition:ClassDefinition !.;
+	ClassExtensionFile <- TonelFileObject WsNl ClassExtension !.;
 	PackagePropertiesFile <- TonelFileObject WsNl PackageProperties !.;
 	ClassDefinitionPropertiesFile <- TonelFileObject WsNl ClassProperties !.;
 	ClassExtensionPropertiesFile <- TonelFileObject WsNl TonelClassExtensionObject !.;
 	TonelMethodFile <- TonelFileObject WsNl DescribedSmalltalkMethod !.;
-	ClassDefinitionFile <- TonelFileObject WsNl classDefinition:ClassDefinition !.;
-	ClassDefinition <- ClassProperties (WsNl methods:SmalltalkMethods)?;
-	SmalltalkMethods <- (DescribedSmalltalkMethod WsNl SmalltalkMethods) / DescribedSmalltalkMethod;
-	ClassExtensionFile <- TonelFileObject WsNl ClassExtension !.;
-	ClassExtension <- TonelClassExtensionObject WsNl SmalltalkMethods;
 	PackageFile <- TonelFileObject WsNl PackageProperties WsNl PackageContents !.;
+
+	PackageProperties <- Comment? PackagePropertiesObject;
+	ClassProperties <- Comment? classProperties:ClassPropertiesObject;			
+	Comment <- "\"" WsNl comment:(!(WsNl "\"" WsNl) .)* WsNl "\"" WsNl;
+	
 	PackageContents <- (ClassDefinitions WsNl ClassExtensions) / ClassDefinitions / ClassExtensions;
 	ClassDefinitions <- (ClassDefinition WsNl ClassDefinitions) / ClassDefinition;
 	ClassExtensions <- (ClassExtension WsNl ClassExtensions) / ClassExtension;
+	ClassDefinition <- ClassProperties (WsNl methods:SmalltalkMethods)?;
+	ClassExtension <- TonelClassExtensionObject WsNl SmalltalkMethods;
 
+	SmalltalkMethods <- (DescribedSmalltalkMethod WsNl SmalltalkMethods) / DescribedSmalltalkMethod;
+	DescribedSmalltalkMethod <- squareBracketsMethod:SquareBracketsMethod / 
+		propertiesMethod:PropertiesMethod;
+	PropertiesMethod <- "Method " TonelMethodDescriptor;
+	SquareBracketsMethod <- (TonelMethodDescriptor WsNl)? ClassIdentification WsBlank MessagePattern "[" WsNl 
+		((!"]" methodBody:SmalltalkCode WsNl "]") / "]") WsNl;
+	TonelMethodDescriptor <- methodProperties:Map;
+	ClassIdentification <- ClassIdentifier WsBlank ">>";
+	ClassIdentifier <- className:ClassName (WsBlank isMeta:"class")?;
+	ClassName <- (!Whitespace .)+;
+	MessagePattern <- 
+		patternAndWhitespace:((KeywordAndArg (Whitespace KeywordAndArg)*
+			/ selectorPart:BinarySelector Whitespace arg:Identifier 
+			/ selectorPart:Identifier) 
+		postPatternWhitespace:TrailingWhitespace?);
+	KeywordAndArg <- selectorPart:Keyword Whitespace arg:Identifier;
+	Keyword <- Identifier ":";
+	BinarySelector <- BinaryCharacter+;
+	Identifier <- Letter (Letter / Digit)*;
+	BinaryCharacter <- [+/\\*~<>=@%|&?!\-,];
+	Letter <- [A-Za-z_];
+	Digit <- [0-9];
+	Whitespace <- [ \n\t]+;
+	TrailingWhitespace <- [ \t]+;
+	SmalltalkCode <- (SmalltalkStringLiteral / SmalltalkComment / 
+	SmalltalkCharacterLiteral / SmalltalkBlock / OtherSmalltalkCode)*;
+	SmalltalkStringLiteral <- "\''''" (!"\''''" .)* "\''''";
+	SmalltalkComment <- "\"" ( !"\"" . )* "\"";
+	SmalltalkCharacterLiteral <- "$" .;
+	SmalltalkBlock <- "[" SmalltalkCode "]";
+	OtherSmalltalkCode <- (!("\"" / "\''''" / "$" / "[" / (WsNl "]")) .)+;
+
+	TonelFileObject <- "TonelFile" WsBlank fileInfo:Map;
+	PackagePropertiesObject <- "Package" WsBlank packageInfo:Map;
+	ClassPropertiesObject <- "Class" WsBlank Map;
+	TonelClassExtensionObject <- "Extension" WsBlank classExtension:Map;
 	Map <- SingleEntryMap / MultipleEntryMap;
 	SingleEntryMap <- "{" WsBlank Association WsBlank "}" WsNl;
 	MultipleEntryMap <- "{" WsNl AssociationLines "}" WsNl;
@@ -63,23 +95,16 @@ TnFileParser class >> grammarSource [
 	StringChar <- !"\''" !"\\" .;
 	StringEscape <- "\\\\" / "\\\''";
 	SimpleSymbol <- "#" key:SimpleSymbolChar+;
-	SimpleSymbolChar <- [A-Z] / [a-z] / [0-9] / "-" / "_" / "." / "/";
-
-	Comment <- "\"" WsNl comment:(!(WsNl "\"" WsNl) .)* WsNl "\"" WsNl;
-	
-	DescribedSmalltalkMethod <- squareBracketsMethod:(TonelMethodDescriptor? SquareBracketsMethod) / 
-		propertiesMethod:PropertiesMethod;
-
-	PropertiesMethod <- "Method " TonelMethodDescriptor;
-	SquareBracketsMethod <- ClassIdentification WsBlank messagePattern:MessagePattern "[" WsNl 
-		((!"]" methodBody:SmalltalkCode WsNl "]") / "]") WsNl;
-	ClassIdentification <- ClassIdentifier WsBlank ">>";
-	ClassIdentifier <- className:ClassName (WsBlank isMeta:"class")?;
-	ClassName <- (!Whitespace .)+;
+	SimpleSymbolChar <- [A-Za-z0-9\-_./];
 
 	WsTab <- "\t";
 	WsTabTab <- WsTab WsTab;
-		' , self squareBracketsGrammarSource
+	WsBlank <- " ";
+	WsNl <- "\n" / "\r\n";
+
+
+
+'
 ]
 
 { #category : 'private - astNodeLabels' }

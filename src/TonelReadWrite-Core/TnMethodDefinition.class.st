@@ -6,8 +6,7 @@ Class {
 		'selector',
 		'isMeta',
 		'properties',
-		'messagePattern',
-		'methodBody'
+		'messagePattern'
 	],
 	#category : 'TonelReadWrite-Core-Model',
 	#package : 'TonelReadWrite-Core',
@@ -82,42 +81,12 @@ TnMethodDefinition >> isMetaAst: astNode [
 	isMeta := true
 ]
 
-{ #category : 'accessing' }
-TnMethodDefinition >> messagePattern [
-
-	^ messagePattern
-]
-
-{ #category : 'accessing' }
-TnMethodDefinition >> messagePattern: anObject [
-
-	messagePattern := anObject
-]
-
 { #category : 'private - astNodeLabels' }
 TnMethodDefinition >> messagePatternAst: astNode [
 	"This includes the trailing blank."
 
 	messagePattern := astNode text.
 	selector := self selectorFromPatternAst: astNode
-]
-
-{ #category : 'accessing' }
-TnMethodDefinition >> methodBody [
-
-	^ methodBody
-]
-
-{ #category : 'accessing' }
-TnMethodDefinition >> methodBody: anObject [
-
-	methodBody := anObject
-]
-
-{ #category : 'private - astNodeLabels' }
-TnMethodDefinition >> methodBodyAst: astNode [
-
-	methodBody := astNode text
 ]
 
 { #category : 'private - astNodeLabels' }

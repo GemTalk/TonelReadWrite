@@ -62,7 +62,7 @@ TnMethodPatternParserTest >> testUnaryFailure [
 	| selectors |
 	selectors := #( '' 6 '6b' '_%' '&2' ).
 	selectors do: [ :selector |
-		self should: [ parser parse: selector , ' ' ] raise: Error ]
+		self should: [ parser parse: selector ] raise: Error ]
 ]
 
 { #category : 'tests' }
@@ -72,6 +72,6 @@ TnMethodPatternParserTest >> testUnarySuccess [
 	selectors := #( anIdentifier a b6 _foo _22a ).
 	selectors do: [ :selector |
 		| result |
-		result := parser parse: selector , ' '.
+		result := parser parse: selector.
 		self assert: result equals: selector ]
 ]

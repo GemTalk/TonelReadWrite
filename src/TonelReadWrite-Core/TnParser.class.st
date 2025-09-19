@@ -16,9 +16,10 @@ TnParser class >> messagePatternGrammarSource [
 
 	^ '
 	MessagePattern <- 
-		messagePattern:(selectorPart:Identifier Whitespace 
-			/ selectorPart:BinarySelector Whitespace arg:Identifier Whitespace 
-			/ (KeywordAndArg (Whitespace KeywordAndArg)*) Whitespace?);
+		patternAndWhitespace:(messagePattern:(KeywordAndArg (Whitespace KeywordAndArg)*
+			/ selectorPart:BinarySelector Whitespace arg:Identifier 
+			/ selectorPart:Identifier) 
+		postPatternWhitespace:TrailingWhitespace?);
 	KeywordAndArg <- selectorPart:Keyword Whitespace arg:Identifier;
 	Keyword <- Identifier ":";
 	BinarySelector <- BinaryCharacter+;
@@ -28,7 +29,7 @@ TnParser class >> messagePatternGrammarSource [
 	Digit <- [0-9];
 
 	Whitespace <- [ \n\t]+;
-
+	TrailingWhitespace <- [ \t]+;
 	'
 ]
 
