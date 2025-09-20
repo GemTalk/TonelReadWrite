@@ -47,13 +47,12 @@ TnFileParser class >> grammarSource [
 	SmalltalkMethods <- (DescribedSmalltalkMethod WsNl SmalltalkMethods) / DescribedSmalltalkMethod;
 	DescribedSmalltalkMethod <- squareBracketsMethod:SquareBracketsMethod / 
 		propertiesMethod:PropertiesMethod;
-	PropertiesMethod <- "Method " TonelMethodDescriptor;
-	SquareBracketsMethod <- (TonelMethodDescriptor WsNl)? ClassIdentification WsBlank MessagePattern "[" WsNl 
-		((!"]" methodBody:SmalltalkCode WsNl "]") / "]") WsNl;
-	TonelMethodDescriptor <- methodProperties:Map;
+	PropertiesMethod <- "Method " Map;
+	SquareBracketsMethod <- methodProperties:Map? ClassIdentification WsBlank 
+		methodSource:SquareBracketsMethodSource WsNl;
+	SquareBracketsMethodSource <- MessagePattern "[" WsNl ("]" / methodBody:SmalltalkCode WsNl "]");
 	ClassIdentification <- ClassIdentifier WsBlank ">>";
-	ClassIdentifier <- className:ClassName (WsBlank isMeta:"class")?;
-	ClassName <- (!Whitespace .)+;
+	ClassIdentifier <- className:Identifier (WsBlank isMeta:"class")?;
 	MessagePattern <- 
 		patternAndWhitespace:((KeywordAndArg (Whitespace KeywordAndArg)*
 			/ selectorPart:BinarySelector Whitespace arg:Identifier 
@@ -244,7 +243,13 @@ TnFileParser >> propertiesMethod: astNode [
 { #category : 'private - astNodeLabels' }
 TnFileParser >> squareBracketsMethod: astNode [
 
-	^ TnMethodDefinition fromSquareBracketsAst: astNode
+	| method |
+	method := TnMethodDefinition new.
+	method
+		lineTable: lineTable;
+		fileReference: fileReference;
+		initializeFromSquareBracketsAst: astNode.
+	^ method
 ]
 
 { #category : 'private - astNodeLabels' }

@@ -45,6 +45,12 @@ TTnAstTools >> mapFromAst: astNode [
 	^ map
 ]
 
+{ #category : 'asserting' }
+TTnAstTools >> shouldRecordSourceLocations [
+
+	^ true
+]
+
 { #category : 'private' }
 TTnAstTools >> unescape: inputString [
 	"Answer a copy of the inputString with \' and \\ replaced by ' and \"
