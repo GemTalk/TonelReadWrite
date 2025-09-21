@@ -30,8 +30,8 @@ TTnAstTools >> dictionaryFromOrderedMap: map [
 { #category : 'private' }
 TTnAstTools >> mapFromAst: astNode [
 	"astNode is the root of key/value pairs. Answer an OrderedCollection of 
-	Associations representing these pairs. Order is preserved for verifying
-	ordering in the file."
+	Associations representing the key and the value AST node. 
+	Order is preserved for verifying ordering in the file."
 
 	| map currentKey |
 	map := OrderedCollection new.
@@ -41,14 +41,8 @@ TTnAstTools >> mapFromAst: astNode [
 		text := self unescape: child text.
 		child label = 'key'
 			ifTrue: [ currentKey := text ]
-			ifFalse: [ map add: currentKey -> text ] ].
+			ifFalse: [ map add: currentKey -> child ] ].
 	^ map
-]
-
-{ #category : 'asserting' }
-TTnAstTools >> shouldRecordSourceLocations [
-
-	^ true
 ]
 
 { #category : 'private' }

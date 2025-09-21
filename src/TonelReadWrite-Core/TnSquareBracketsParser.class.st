@@ -22,12 +22,6 @@ TnSquareBracketsParser >> code: astNode [
 	^ astNode text
 ]
 
-{ #category : 'testing' }
-TnSquareBracketsParser >> shouldRecordSourceLocations [
-
-	^ false
-]
-
 { #category : 'private' }
 TnSquareBracketsParser >> syntaxCoverageRules [
 	"This method should answer a collection of rule names that, between them, should cover all input text."

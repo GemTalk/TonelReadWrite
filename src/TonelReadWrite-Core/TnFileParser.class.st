@@ -6,6 +6,10 @@ Uses the Pika parser (a PEG parser) to do the parsing into an object structure t
 Class {
 	#name : 'TnFileParser',
 	#superclass : 'TnParser',
+	#instVars : [
+		'currentClass',
+		'currentMethod'
+	],
 	#category : 'TonelReadWrite-Core-Parser',
 	#package : 'TonelReadWrite-Core',
 	#tag : 'Parser'
@@ -34,9 +38,9 @@ TnFileParser class >> grammarSource [
 	TonelMethodFile <- TonelFileObject WsNl DescribedSmalltalkMethod !.;
 	PackageFile <- TonelFileObject WsNl PackageProperties WsNl PackageContents !.;
 
-	PackageProperties <- Comment? PackagePropertiesObject;
-	ClassProperties <- Comment? classProperties:ClassPropertiesObject;			
-	Comment <- "\"" WsNl comment:(!(WsNl "\"" WsNl) .)* WsNl "\"" WsNl;
+	PackageProperties <- packageComment:Comment? PackagePropertiesObject;
+	ClassProperties <- classComment:Comment? classProperties:ClassPropertiesObject;			
+	Comment <- "\"" WsNl commentBody:(!(WsNl "\"" WsNl) .)* WsNl "\"" WsNl;
 	
 	PackageContents <- (ClassDefinitions WsNl ClassExtensions) / ClassDefinitions / ClassExtensions;
 	ClassDefinitions <- (ClassDefinition WsNl ClassDefinitions) / ClassDefinition;
@@ -52,9 +56,9 @@ TnFileParser class >> grammarSource [
 		methodSource:SquareBracketsMethodSource WsNl;
 	SquareBracketsMethodSource <- MessagePattern "[" WsNl ("]" / methodBody:SmalltalkCode WsNl "]");
 	ClassIdentification <- ClassIdentifier WsBlank ">>";
-	ClassIdentifier <- className:Identifier (WsBlank isMeta:"class")?;
+	ClassIdentifier <- definingClass:Identifier (WsBlank isMeta:"class")?;
 	MessagePattern <- 
-		patternAndWhitespace:((KeywordAndArg (Whitespace KeywordAndArg)*
+		messagePatternAndWhitespace:((KeywordAndArg (Whitespace KeywordAndArg)*
 			/ selectorPart:BinarySelector Whitespace arg:Identifier 
 			/ selectorPart:Identifier) 
 		postPatternWhitespace:TrailingWhitespace?);
@@ -107,44 +111,48 @@ TnFileParser class >> grammarSource [
 ]
 
 { #category : 'private - astNodeLabels' }
+TnFileParser >> classComment: astNode [
+
+	| commentText |
+	commentText := self unDoubleCommentQuotesIn: astNode onlyChild text.
+	currentClass comment: commentText.
+	^ nil
+]
+
+{ #category : 'private - astNodeLabels' }
 TnFileParser >> classDefinition: astNode [
 
-	| classDefinition propertiesAst propertiesMap nameEntry superclassEntry methodsAst |
-	classDefinition := TnClassDefinition new.
-	astNode firstChild label = 'comment'
-		ifTrue: [
-			propertiesAst := astNode secondChild.
-			methodsAst := astNode thirdChild.
-			classDefinition comment:
-				(self unDoubleCommentQuotesIn: astNode firstChild text) ]
-		ifFalse: [
-			propertiesAst := astNode firstChild.
-			methodsAst := astNode secondChild ].
-	propertiesMap := self
-		                 mapLabeled: 'classProperties'
-		                 fromAst: propertiesAst.
-	nameEntry := propertiesMap removeFirst.
-	nameEntry key = 'name' ifFalse: [
-		self error: 'Expected key oflabel "name," found: ' , nameEntry key ].
-	classDefinition name: nameEntry value.
-	superclassEntry := propertiesMap removeFirst.
-	superclassEntry key = 'superclass' ifFalse: [
-		self error:
-			'Expected key of "superclass," found: ' , superclassEntry key ].
-	classDefinition superclassName: superclassEntry value.
-	classDefinition optionalProperties:
-		(self dictionaryFromOrderedMap: propertiesMap).
-	methodsAst label = 'methods' ifFalse: [
-		self error: 'Expected label "methods," found: ' , methodsAst label ].
-	methodsAst children do: [ :methodAst |
-		classDefinition addMethod: (self visitAstNode: methodAst) ].
+	| classDefinition |
+	currentClass := classDefinition := TnClassDefinition new.
+	astNode children do: [ :child | self visitAstNode: child ].
+	currentClass := nil.
 	^ classDefinition
 ]
 
 { #category : 'private - astNodeLabels' }
 TnFileParser >> classProperties: astNode [
 
-	^ self mapFromAst: astNode
+	| propertiesMap nameEntry superclassEntry |
+	propertiesMap := self mapLabeled: 'classProperties' fromAst: astNode.
+	nameEntry := propertiesMap removeFirst.
+	nameEntry key = 'name' ifFalse: [
+		self error: 'Expected key oflabel "name," found: ' , nameEntry key ].
+	currentClass name: nameEntry value text.
+	superclassEntry := propertiesMap removeFirst.
+	superclassEntry key = 'superclass' ifFalse: [
+		self error:
+			'Expected key of "superclass," found: ' , superclassEntry key ].
+	currentClass superclassName: superclassEntry value text.
+	currentClass optionalProperties:
+		(self dictionaryFromOrderedMap: propertiesMap).
+	^ nil
+]
+
+{ #category : 'private - astNodeLabels' }
+TnFileParser >> definingClass: astNode [
+
+	currentMethod definingClass: astNode text.
+	^ nil
 ]
 
 { #category : 'private - astNodeLabels' }
@@ -159,18 +167,26 @@ TnFileParser >> fileInfo: astNode [
 	canonicalName := map removeFirst.
 	tonelVersion key = 'tonelVersion' ifFalse: [
 		self error: 'Expected key "tonelVersion," found ' , tonelVersion key ].
-	tonelVersion value = '1.0' ifFalse: [
-		self error: 'Unsupported Tonel version ' , tonelVersion value ].
+	tonelVersion value text = '1.0' ifFalse: [
+		self error: 'Unsupported Tonel version ' , tonelVersion value text ].
 	contentType key = 'contentType' ifFalse: [
 		self error: 'Expected key "contentType," found ' , contentType key ].
 	canonicalName key = 'name' ifFalse: [
 		self error: 'Expected key "name," found ' , canonicalName key ].
 	fileInfo
-		tonelVersion: tonelVersion value;
-		contentType: contentType value;
-		canonicalName: canonicalName value;
+		tonelVersion: tonelVersion value text;
+		contentType: contentType value text;
+		canonicalName: canonicalName value text;
 		optionalFileInfo: (self dictionaryFromOrderedMap: map).
 	^ fileInfo
+]
+
+{ #category : 'private - astNodeLabels' }
+TnFileParser >> isMeta: astNode [
+	"This node is only present if it's a class method."
+
+	currentMethod isMeta: true.
+	^ nil
 ]
 
 { #category : 'private' }
@@ -183,6 +199,61 @@ TnFileParser >> mapLabeled: expectedLabel fromAst: astNode [
 		self error:
 			'Expected label "classProperties," found: ' , astNode label ].
 	^ self mapFromAst: astNode
+]
+
+{ #category : 'private - astNodeLabels' }
+TnFileParser >> messagePatternAndWhitespace: astNode [
+	"The pattern is the start of the source, but for a squareBracketsMethod, the 
+	parser strips out the [ and the newline after it, so to get the source
+	offsets right we add here a space (taking the place of the [) and a newline."
+
+	| text sourceStream selectorStream |
+	text := astNode text.
+	sourceStream := WriteStream on: (String new: text size + 2).
+	sourceStream
+		<< text;
+		space;
+		lf.
+	currentMethod addSource: sourceStream contents.
+
+	selectorStream := WriteStream on: (String new: text size).
+	astNode children do: [ :childAst |
+		childAst label = 'selectorPart' ifTrue: [
+			selectorStream << childAst text ] ].
+	currentMethod selector: selectorStream contents.
+
+	^ nil
+]
+
+{ #category : 'private - astNodeLabels' }
+TnFileParser >> methodBody: astNode [
+
+	currentMethod addSource: astNode text.
+	^ nil
+]
+
+{ #category : 'private - astNodeLabels' }
+TnFileParser >> methodProperties: astNode [
+
+	currentMethod properties:
+		(self dictionaryFromOrderedMap: (self mapFromAst: astNode)).
+	^ nil
+]
+
+{ #category : 'private - astNodeLabels' }
+TnFileParser >> methodSource: astNode [
+
+	self setSourceLocationOf: currentMethod from: astNode.
+	self visitChildrenOf: astNode.
+	^ nil
+]
+
+{ #category : 'private - astNodeLabels' }
+TnFileParser >> methods: astNode [
+
+	astNode children do: [ :methodAst |
+		currentClass addMethod: (self visitAstNode: methodAst) ].
+	^ nil
 ]
 
 { #category : 'parsing' }
@@ -208,22 +279,22 @@ TnFileParser >> propertiesMethod: astNode [
 
 	| methodDefinition map currentMapEntry currentValue |
 	methodDefinition := TnMethodDefinition new.
-	map := self mapFromAst: astNode onlyChild.
+	map := self mapFromAst: astNode.
 	map size < 4 ifTrue: [
 		self error: 'Expected at least four properties, found only '
 			, map size printString ].
 	currentMapEntry := map removeFirst.
 	currentMapEntry key = 'class' ifFalse: [
 		self error: 'Expected key "class," found: ' , currentMapEntry key ].
-	methodDefinition definingClass: currentMapEntry value.
+	methodDefinition definingClass: currentMapEntry value text.
 	currentMapEntry := map removeFirst.
 	currentMapEntry key = 'selector' ifFalse: [
 		self error: 'Expected key "selector," found: ' , currentMapEntry key ].
-	methodDefinition selector: currentMapEntry value.
+	methodDefinition selector: currentMapEntry value text.
 	currentMapEntry := map removeFirst.
 	currentMapEntry key = 'isMeta' ifFalse: [
 		self error: 'Expected key "class," found: ' , currentMapEntry key ].
-	currentValue := currentMapEntry value.
+	currentValue := currentMapEntry value text.
 	currentValue = 'true'
 		ifTrue: [ methodDefinition isMeta: true ]
 		ifFalse: [
@@ -235,7 +306,11 @@ TnFileParser >> propertiesMethod: astNode [
 	currentMapEntry := map removeFirst.
 	currentMapEntry key = 'source' ifFalse: [
 		self error: 'Expected key "source," found: ' , currentMapEntry key ].
-	methodDefinition source: currentMapEntry value;
+	self
+		setSourceLocationOf: methodDefinition
+		from: currentMapEntry value.
+	methodDefinition
+		addSource: currentMapEntry value text;
 		properties: (self dictionaryFromOrderedMap: map).
 	^ methodDefinition
 ]
@@ -243,46 +318,10 @@ TnFileParser >> propertiesMethod: astNode [
 { #category : 'private - astNodeLabels' }
 TnFileParser >> squareBracketsMethod: astNode [
 
-	| method |
-	method := TnMethodDefinition new.
-	method
-		lineTable: lineTable;
-		fileReference: fileReference;
-		initializeFromSquareBracketsAst: astNode.
-	^ method
-]
-
-{ #category : 'private - astNodeLabels' }
-TnFileParser >> squareBracketsMethodOld: astNode [
-
-	| methodDefinition propertiesAst classNameAst isMetaAst methodSourceAst |
-	methodDefinition := TnMethodDefinition new.
-	"squareBracketsNode can have up to four children. isMeta only appears 
-	when it's a class method, and the properties are optional."
-	propertiesAst := classNameAst := isMetaAst := methodSourceAst := nil. "lint"
-	astNode children do: [ :childAst |
-		| label |
-		label := childAst label.
-		label = 'methodProperties'
-			ifTrue: [ propertiesAst := childAst ]
-			ifFalse: [
-				label = 'className'
-					ifTrue: [ classNameAst := childAst ]
-					ifFalse: [
-						label = 'isMeta'
-							ifTrue: [ isMetaAst := childAst ]
-							ifFalse: [
-								label = 'methodSource'
-									ifTrue: [ methodSourceAst := childAst ]
-									ifFalse: [ self error: 'Unexpected method label: ' , label ] ] ] ] ].
-	propertiesAst ifNotNil: [
-		methodDefinition properties:
-			(self dictionaryFromOrderedMap: (self mapFromAst: propertiesAst)) ].
-	methodDefinition definingClass: classNameAst text.
-	isMetaAst ifNotNil: [ methodDefinition isMeta: true ].
-	methodDefinition
-		source: methodSourceAst text;
-		selector: (self parsePattern: methodSourceAst onlyChild text).
+	| methodDefinition |
+	currentMethod := methodDefinition := TnMethodDefinition new.
+	astNode children do: [ :child | self visitAstNode: child ].
+	currentMethod := nil.
 	^ methodDefinition
 ]
 

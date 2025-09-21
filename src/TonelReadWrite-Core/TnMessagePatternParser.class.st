@@ -45,12 +45,6 @@ TnMessagePatternParser >> patternAndWhitespace: astNode [
 	^ self visitAstNode: astNode firstChild
 ]
 
-{ #category : 'testing' }
-TnMessagePatternParser >> shouldRecordSourceLocations [
-
-	^ false
-]
-
 { #category : 'private' }
 TnMessagePatternParser >> syntaxCoverageRules [
 	"This method should answer a collection of rule names that, between them, should cover all input text."

@@ -52,3 +52,23 @@ TnParser class >> squareBracketsGrammarSource [
 	WsNl <- "\n" / "\r\n";
 	' , self messagePatternGrammarSource
 ]
+
+{ #category : 'private' }
+TnParser >> dictionaryFromOrderedMap: map [
+	"Map is an OrderedCollection of Associations.
+	Check its ordering and answer an unordered but otherwise
+	equivalent Dictionary"
+
+	| dict previousKey |
+	dict := Dictionary new.
+	previousKey := ''.
+	map do: [ :each |
+		| currentKey |
+		currentKey := each key.
+		currentKey > previousKey ifFalse: [
+			self error: 'Keys not in canonical order: "' , currentKey
+				, '" is not greater than "' , previousKey , '"' ].
+		dict at: each key put: each value text.
+		previousKey := currentKey ].
+	^ dict
+]

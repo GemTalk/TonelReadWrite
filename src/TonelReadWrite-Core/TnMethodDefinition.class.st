@@ -15,6 +15,12 @@ Class {
 	#tag : 'Model'
 }
 
+{ #category : 'accessing' }
+TnMethodDefinition >> addSource: aString [
+
+	source := source , aString
+]
+
 { #category : 'private' }
 TnMethodDefinition >> canBeWrittenAsSquareBracketMethod [
 
@@ -45,10 +51,12 @@ TnMethodDefinition >> definingClass: anObject [
 ]
 
 { #category : 'initializing' }
-TnMethodDefinition >> initialize [ 
+TnMethodDefinition >> initialize [
+
 	super initialize.
 	isMeta := false.
 	properties := Dictionary new.
+	source := ''
 ]
 
 { #category : 'parsing' }
@@ -81,13 +89,6 @@ TnMethodDefinition >> isMetaAst: astNode [
 TnMethodDefinition >> methodBody: astNode [
 
 	source := source , astNode text
-]
-
-{ #category : 'private - astNodeLabels' }
-TnMethodDefinition >> methodPropertiesAst: astNode [
-
-	properties := self dictionaryFromOrderedMap:
-		              (self mapFromAst: astNode)
 ]
 
 { #category : 'private - astNodeLabels' }
@@ -157,12 +158,6 @@ TnMethodDefinition >> selectorFromPatternAst: astNode [
 TnMethodDefinition >> source [
 
 	^ source
-]
-
-{ #category : 'accessing' }
-TnMethodDefinition >> source: anObject [
-
-	source := anObject
 ]
 
 { #category : 'writing' }
