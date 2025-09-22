@@ -1,8 +1,6 @@
 Class {
 	#name : 'TnParser',
 	#superclass : 'PikaParser',
-	#traits : 'TTnAstTools',
-	#classTraits : 'TTnAstTools classTrait',
 	#category : 'TonelReadWrite-Core-Parser',
 	#package : 'TonelReadWrite-Core',
 	#tag : 'Parser'

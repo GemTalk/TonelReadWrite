@@ -1,8 +1,6 @@
 Class {
 	#name : 'TnMethodDefinition',
 	#superclass : 'TnNode',
-	#traits : 'TTnAstTools',
-	#classTraits : 'TTnAstTools classTrait',
 	#instVars : [
 		'definingClass',
 		'selector',
@@ -32,12 +30,6 @@ TnMethodDefinition >> canBeWrittenAsSquareBracketMethod [
 	^ true
 ]
 
-{ #category : 'private - astNodeLabels' }
-TnMethodDefinition >> classNameAst: astNode [
-
-	definingClass := astNode text
-]
-
 { #category : 'accessing' }
 TnMethodDefinition >> definingClass [
 
@@ -59,14 +51,6 @@ TnMethodDefinition >> initialize [
 	source := ''
 ]
 
-{ #category : 'parsing' }
-TnMethodDefinition >> initializeFromSquareBracketsAst: squareBracketsAst [
-
-	squareBracketsAst children do: [ :childAst |
-		self perform: (childAst label , 'Ast:') asSymbol with: childAst ].
-	^ self
-]
-
 { #category : 'accessing' }
 TnMethodDefinition >> isMeta [
 
@@ -77,47 +61,6 @@ TnMethodDefinition >> isMeta [
 TnMethodDefinition >> isMeta: anObject [
 
 	isMeta := anObject
-]
-
-{ #category : 'private - astNodeLabels' }
-TnMethodDefinition >> isMetaAst: astNode [
-
-	isMeta := true
-]
-
-{ #category : 'private - astNodeLabels' }
-TnMethodDefinition >> methodBody: astNode [
-
-	source := source , astNode text
-]
-
-{ #category : 'private - astNodeLabels' }
-TnMethodDefinition >> methodSourceAst: astNode [
-
-	self setSourceLocationOf: self from: astNode.
-	astNode children do: [ :childAst | self visitAstNode: childAst ]
-]
-
-{ #category : 'private - astNodeLabels' }
-TnMethodDefinition >> patternAndWhitespace: astNode [
-	"The pattern is the start of the source, but for a squareBracketsMethod, the 
-	parser strips out the [ and the newline after it, so to get the source
-	offsets right we add here a space (taking the place of the [) and a newline."
-
-	| text sourceStream selectorStream |
-	text := astNode text.
-	sourceStream := WriteStream on: (String new: text size + 2).
-	sourceStream
-		<< text;
-		space;
-		lf.
-	source := sourceStream contents.
-
-	selectorStream := WriteStream on: (String new: text size).
-	astNode children do: [ :childAst |
-		childAst label = 'selectorPart' ifTrue: [
-			selectorStream << childAst text ] ].
-	selector := selectorStream contents
 ]
 
 { #category : 'accessing' }
@@ -142,16 +85,6 @@ TnMethodDefinition >> selector [
 TnMethodDefinition >> selector: anObject [
 
 	selector := anObject
-]
-
-{ #category : 'private' }
-TnMethodDefinition >> selectorFromPatternAst: astNode [
-
-	| stream |
-	stream := WriteStream on: (String new: astNode text size).
-	astNode children do: [ :child |
-		child label = 'selectorPart' ifTrue: [ stream nextPutAll: child text ] ].
-	^ stream contents
 ]
 
 { #category : 'accessing' }
