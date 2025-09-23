@@ -38,3 +38,7 @@ TnParserTest >> testParseStack [
 	parseResult writeOn: outStream.
 	self assert: outStream contents equals: inputString
 ]
+
+{ #category : 'accessing' }
+TnParserTest >> yourself [
+]

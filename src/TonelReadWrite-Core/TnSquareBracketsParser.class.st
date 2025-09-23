@@ -12,14 +12,15 @@ TnSquareBracketsParser class >> grammarSource [
 
 	^ '
 	start <- code:(MethodSource !.);
-	MethodSource <- messagePattern:(MessagePattern) "[" WsNl SmalltalkCode;
-	' , self squareBracketsGrammarSource
+	MethodSource <- Whitespace? messagePattern:(MessagePattern) methodBody:SmalltalkCode;
+	' , self methodGrammarSource
 ]
 
 { #category : 'private - astNodeLabels' }
 TnSquareBracketsParser >> code: astNode [
+	"Answer the method AST"
 
-	^ astNode text
+	^ astNode
 ]
 
 { #category : 'private' }

@@ -32,16 +32,27 @@ TnNode >> sourceReference: anObject [
 	sourceReference := anObject
 ]
 
+{ #category : 'as yet unclassified' }
+TnNode >> stonEscape: aString on: outStream [
+
+	| inStream |
+	inStream := ReadStream on: aString.
+	[ inStream atEnd ] whileFalse: [
+		| char |
+		char := inStream next.
+		(char == $' or: [ char == $\ ]) ifTrue: [ outStream << '\' ].
+		outStream nextPut: char ]
+]
+
 { #category : 'private' }
-TnNode >> writeAssociation: each on: aStream [
+TnNode >> writeAssociation: assoc on: aStream [
 
 	aStream
 		<< '#';
-		<< each key;
-		space;
-		<< ':';
-		space;
-		<< each value printString
+		<< assoc key;
+		<< ' : '''.
+	self stonEscape: assoc value on: aStream.
+	aStream << ''''
 ]
 
 { #category : 'private' }
@@ -63,6 +74,17 @@ TnNode >> writeComment: commentString on: outStream [
 		lf;
 		<< '"';
 		lf
+]
+
+{ #category : 'private' }
+TnNode >> writeMap: map on: aStream [
+	"Map is anonymous, all entries are optional."
+
+	self
+		writeMapNamed: nil
+		withRequiredProperties: #(  )
+		optionalProperties: map
+		on: aStream
 ]
 
 { #category : 'private' }
@@ -88,7 +110,9 @@ TnNode >> writeMapName: mapName on: aStream [
 { #category : 'private' }
 TnNode >> writeMapNamed: mapName withRequiredProperties: requiredProperties optionalProperties: optionalPropertiesDict on: aStream [
 
-	"Overwrite that last comma"
+	| totalEntries |
+	totalEntries := requiredProperties size + optionalPropertiesDict size.
+	totalEntries = 0 ifTrue: [ ^ self ].
 	self writeMapName: mapName on: aStream.
 	requiredProperties size + optionalPropertiesDict size > 1 ifFalse: [
 		^ self
@@ -108,9 +132,7 @@ TnNode >> writeMultipleEntryMapWithRequiredProperties: requiredProperties option
 	sortedOptionalProperties := SortedCollection sortUsing:
 		                            #key ascending.
 	sortedOptionalProperties addAll: optionalPropertiesDict associations.
-	aStream
-		<< '{';
-		lf.
+	aStream << '{'.
 	self
 		writeMapEntries: requiredProperties on: aStream;
 		writeMapEntries: sortedOptionalProperties on: aStream.

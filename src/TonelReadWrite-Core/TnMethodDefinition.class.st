@@ -20,14 +20,13 @@ TnMethodDefinition >> addSource: aString [
 ]
 
 { #category : 'private' }
-TnMethodDefinition >> canBeWrittenAsSquareBracketMethod [
+TnMethodDefinition >> astForSquareBracketsMethod [
 
 	| parser |
 	parser := TnSquareBracketsParser new.
-	[ parser parse: self source ]
-		on: PikaSyntaxError 
-		do: [ ^ false ].
-	^ true
+	[ ^ parser parse: self source ]
+		on: PikaSyntaxError
+		do: [ ^ nil ]
 ]
 
 { #category : 'accessing' }
@@ -93,11 +92,58 @@ TnMethodDefinition >> source [
 	^ source
 ]
 
+{ #category : 'private' }
+TnMethodDefinition >> writeAsPropertiesMethodOn: aStream [
+
+	| requiredProperties |
+	requiredProperties := {
+		                      ('class' -> definingClass).
+		                      ('selector' -> selector).
+		                      ('isMeta' -> isMeta printString).
+		                      ('source' -> source) }.
+	self
+		writeMapNamed: 'Method'
+		withRequiredProperties: requiredProperties
+		optionalProperties: properties
+		on: aStream
+]
+
+{ #category : 'private' }
+TnMethodDefinition >> writeAsSquareBracketMethodWithAst: codeAst on: aStream [
+
+	| patternAst bodyAst |
+	patternAst := codeAst firstChild.
+	bodyAst := codeAst secondChild.
+
+	self writeMap: properties on: aStream.
+	aStream << definingClass.
+	isMeta ifTrue: [ aStream << ' class' ].
+	aStream << ' >> '.
+	self writePattern: patternAst on: aStream.
+	aStream
+		<< '[';
+		<< bodyAst text;
+		lf;
+		<< ']';
+		lf
+]
+
 { #category : 'writing' }
 TnMethodDefinition >> writeOn: aStream [
 	"Write my contents on aStream, in Tonel format."
 
-	self canBeWrittenAsSquareBracketMethod
-		ifTrue: [ self writeAsSquareBracketMethodOn: aStream ]
-		ifFalse: [ self writeAsPropertiesMethodOn: aStream ]
+	| ast |
+	ast := self astForSquareBracketsMethod.
+	ast
+		ifNil: [ self writeAsPropertiesMethodOn: aStream ]
+		ifNotNil: [ self writeAsSquareBracketMethodWithAst: ast on: aStream  ]
+]
+
+{ #category : 'private' }
+TnMethodDefinition >> writePattern: patternAst on: aStream [
+
+	patternAst children do: [ :each |
+		aStream
+			<< each text;
+			space ]
 ]
