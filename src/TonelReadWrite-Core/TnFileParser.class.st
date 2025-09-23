@@ -215,16 +215,15 @@ TnFileParser >> mapLabeled: expectedLabel fromAst: astNode [
 { #category : 'private - astNodeLabels' }
 TnFileParser >> messagePatternAndWhitespace: astNode [
 	"The pattern is the start of the source, but for a squareBracketsMethod, the 
-	parser strips out the [ and the newline after it, so to get the source
-	offsets right we add here a space (taking the place of the [) and a newline."
+	parser strips out the [, so to get the source
+	offsets right we add here a space to take the place of the [."
 
 	| text sourceStream selectorStream |
 	text := astNode text.
-	sourceStream := WriteStream on: (String new: text size + 2).
+	sourceStream := WriteStream on: (String new: text size + 1).
 	sourceStream
 		<< text;
-		space;
-		lf.
+		space.
 	currentMethod addSource: sourceStream contents.
 
 	selectorStream := WriteStream on: (String new: text size).
@@ -236,8 +235,15 @@ TnFileParser >> messagePatternAndWhitespace: astNode [
 
 { #category : 'private - astNodeLabels' }
 TnFileParser >> methodBody: astNode [
+	"The method body of a SquareBracketsMethod does not include the leading newline, so add it here."
 
-	currentMethod addSource: astNode text
+	| body outStream |
+	body := astNode text.
+	outStream := WriteStream on: (String new: body size + 1).
+	outStream
+		lf;
+		<< body.
+	currentMethod addSource: outStream contents
 ]
 
 { #category : 'private - astNodeLabels' }
