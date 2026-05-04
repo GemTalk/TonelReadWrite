@@ -40,6 +40,6 @@ BaselineOfTonelReadWrite >> urlForProject: projectName [
 				                  'ROWAN_PROJECTS_HOME must be set to find local projects' ].
 	path := Path / projectsHome / projectName / 'src'.
 	^ path asFileReference exists
-		  ifFalse: [ self error: 'Cannot find ' , path ]
+		  ifFalse: [ self error: 'Cannot find ' , path pathString ]
 		  ifTrue: [ 'gitlocal://' , path pathString ]
 ]
