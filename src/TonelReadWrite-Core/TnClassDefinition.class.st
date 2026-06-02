@@ -61,6 +61,8 @@ TnClassDefinition >> comment: anObject [
 TnClassDefinition >> initialize [
 
 	super initialize.
+	comment := 'No comment provided'.
+	optionalProperties := Dictionary new.
 	classMethods := Dictionary new.
 	instanceMethods := Dictionary new
 ]

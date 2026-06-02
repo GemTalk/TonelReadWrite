@@ -36,6 +36,14 @@ TnFileInfo >> contentType: anObject [
 	contentType := anObject
 ]
 
+{ #category : 'initialization' }
+TnFileInfo >> initialize [
+
+	super initialize.
+	optionalFileInfo := Dictionary new.
+	tonelVersion := '1.0'
+]
+
 { #category : 'accessing' }
 TnFileInfo >> optionalFileInfo [
 

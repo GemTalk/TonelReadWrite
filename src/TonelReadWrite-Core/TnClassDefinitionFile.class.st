@@ -9,6 +9,12 @@ Class {
 	#tag : 'Model'
 }
 
+{ #category : 'instance creation' }
+TnClassDefinitionFile class >> forClassNamed: nameString [
+
+	^ self new initializeForClassNamed: nameString
+]
+
 { #category : 'accessing' }
 TnClassDefinitionFile >> classDefinition [
 
@@ -33,6 +39,20 @@ TnClassDefinitionFile >> fileInfo: aFileInfo [
 			'A class definition file''s canonical name should end in ".class.st" but is: '
 			, aFileInfo canonicalName ].
 	super fileInfo: aFileInfo
+]
+
+{ #category : 'initialization' }
+TnClassDefinitionFile >> initializeForClassNamed: className [
+	"Initialize enough to be able to write a class file with some default info but no methods."
+
+	fileInfo := TnFileInfo new
+						contentType: 'classFile';
+						canonicalName: className , '.class.st';
+						yourself.
+	classDefinition := TnClassDefinition new
+		name: className;
+		superclassName: 'Object';
+		yourself.
 ]
 
 { #category : 'writing' }
