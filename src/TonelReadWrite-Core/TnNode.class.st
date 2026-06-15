@@ -137,7 +137,7 @@ TnNode >> writeMultipleEntryMapWithRequiredProperties: requiredProperties option
 		writeMapEntries: requiredProperties on: aStream;
 		writeMapEntries: sortedOptionalProperties on: aStream.
 	aStream
-		skip: -1;
+		position: aStream position - 1;
 		"Overwrite that last comma"lf;
 		<< '}';
 		lf
