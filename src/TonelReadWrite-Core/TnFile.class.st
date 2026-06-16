@@ -12,6 +12,14 @@ Class {
 	#tag : 'Model'
 }
 
+{ #category : 'instance creation' }
+TnFile class >> parsedFromFile: inputFileReference [
+
+	| inputString |
+	inputString := inputFileReference contents.
+	^ TnFileParser new parseFile: inputFileReference
+]
+
 { #category : 'accessing' }
 TnFile >> fileInfo [
 

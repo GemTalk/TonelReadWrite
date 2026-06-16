@@ -11,6 +11,7 @@ Class {
 
 { #category : 'instance creation' }
 TnClassDefinitionFile class >> forClassNamed: nameString [
+	"The new instance will be initialized as for a minimal new class file."
 
 	^ self new initializeForClassNamed: nameString
 ]
