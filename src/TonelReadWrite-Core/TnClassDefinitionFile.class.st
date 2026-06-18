@@ -29,6 +29,12 @@ TnClassDefinitionFile >> classDefinition: anObject [
 ]
 
 { #category : 'accessing' }
+TnClassDefinitionFile >> classMethods [
+
+	^ classDefinition classMethods
+]
+
+{ #category : 'accessing' }
 TnClassDefinitionFile >> fileInfo: aFileInfo [
 
 	aFileInfo contentType = 'classFile' ifFalse: [
@@ -54,6 +60,12 @@ TnClassDefinitionFile >> initializeForClassNamed: className [
 		name: className;
 		superclassName: 'Object';
 		yourself.
+]
+
+{ #category : 'accessing' }
+TnClassDefinitionFile >> instanceMethods [
+
+	^ classDefinition instanceMethods
 ]
 
 { #category : 'writing' }
